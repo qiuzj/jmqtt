@@ -10,6 +10,11 @@ import org.jmqtt.remoting.util.RemotingHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/***
+ * 连接处理器
+ *  
+ * @version
+ */
 public class NettyConnectHandler extends ChannelDuplexHandler {
 
     private static final Logger log = LoggerFactory.getLogger(LoggerName.REMOTING);

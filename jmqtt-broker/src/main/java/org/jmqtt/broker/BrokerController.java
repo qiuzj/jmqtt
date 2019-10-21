@@ -1,6 +1,10 @@
 package org.jmqtt.broker;
 
-import io.netty.handler.codec.mqtt.MqttMessageType;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
 import org.jmqtt.broker.acl.ConnectPermission;
 import org.jmqtt.broker.acl.PubSubPermission;
 import org.jmqtt.broker.acl.impl.DefaultConnectPermission;
@@ -8,7 +12,16 @@ import org.jmqtt.broker.acl.impl.DefaultPubSubPermission;
 import org.jmqtt.broker.client.ClientLifeCycleHookService;
 import org.jmqtt.broker.dispatcher.DefaultDispatcherMessage;
 import org.jmqtt.broker.dispatcher.MessageDispatcher;
-import org.jmqtt.broker.processor.*;
+import org.jmqtt.broker.processor.ConnectProcessor;
+import org.jmqtt.broker.processor.DisconnectProcessor;
+import org.jmqtt.broker.processor.PingProcessor;
+import org.jmqtt.broker.processor.PubAckProcessor;
+import org.jmqtt.broker.processor.PubCompProcessor;
+import org.jmqtt.broker.processor.PubRecProcessor;
+import org.jmqtt.broker.processor.PubRelProcessor;
+import org.jmqtt.broker.processor.PublishProcessor;
+import org.jmqtt.broker.processor.SubscribeProcessor;
+import org.jmqtt.broker.processor.UnSubscribeProcessor;
 import org.jmqtt.broker.recover.ReSendMessageService;
 import org.jmqtt.broker.subscribe.DefaultSubscriptionTreeMatcher;
 import org.jmqtt.broker.subscribe.SubscriptionMatcher;
@@ -22,17 +35,25 @@ import org.jmqtt.common.log.LoggerName;
 import org.jmqtt.remoting.netty.ChannelEventListener;
 import org.jmqtt.remoting.netty.NettyRemotingServer;
 import org.jmqtt.remoting.netty.RequestProcessor;
-import org.jmqtt.store.*;
+import org.jmqtt.store.AbstractMqttStore;
+import org.jmqtt.store.FlowMessageStore;
+import org.jmqtt.store.OfflineMessageStore;
+import org.jmqtt.store.RetainMessageStore;
+import org.jmqtt.store.SessionStore;
+import org.jmqtt.store.SubscriptionStore;
+import org.jmqtt.store.WillMessageStore;
 import org.jmqtt.store.memory.DefaultMqttStore;
 import org.jmqtt.store.rocksdb.RDBMqttStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import io.netty.handler.codec.mqtt.MqttMessageType;
 
+/**
+ * BrokerController为初始化类，初始化所有的必备环境，其中acl，store的插件配置也必须在这里初始化
+ *  
+ * @version
+ */
 public class BrokerController {
 
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BROKER);
@@ -40,14 +61,17 @@ public class BrokerController {
     private BrokerConfig brokerConfig;
     private NettyConfig nettyConfig;
     private StoreConfig storeConfig;
+    
     private ExecutorService connectExecutor;
     private ExecutorService pubExecutor;
     private ExecutorService subExecutor;
     private ExecutorService pingExecutor;
+    
     private LinkedBlockingQueue connectQueue;
     private LinkedBlockingQueue pubQueue;
     private LinkedBlockingQueue subQueue;
     private LinkedBlockingQueue pingQueue;
+    
     private ChannelEventListener channelEventListener;
     private NettyRemotingServer remotingServer;
     private MessageDispatcher messageDispatcher;
@@ -58,12 +82,12 @@ public class BrokerController {
     private OfflineMessageStore offlineMessageStore;
     private SubscriptionStore subscriptionStore;
     private SessionStore sessionStore;
+    /** 抽象存储对象，可插拔 */
     private AbstractMqttStore abstractMqttStore;
+    
     private ConnectPermission connectPermission;
     private PubSubPermission pubSubPermission;
     private ReSendMessageService reSendMessageService;
-
-
 
     public BrokerController(BrokerConfig brokerConfig, NettyConfig nettyConfig,StoreConfig storeConfig){
         this.brokerConfig = brokerConfig;
@@ -75,7 +99,8 @@ public class BrokerController {
         this.subQueue = new LinkedBlockingQueue(100000);
         this.pingQueue = new LinkedBlockingQueue(10000);
 
-        {//store pluggable
+        // store pluggable. 初始化存储
+        {
             switch (storeConfig.getStoreType()){
                 case 1:
                     this.abstractMqttStore = new RDBMqttStore(storeConfig);
@@ -96,19 +121,20 @@ public class BrokerController {
             this.offlineMessageStore = this.abstractMqttStore.getOfflineMessageStore();
             this.subscriptionStore = this.abstractMqttStore.getSubscriptionStore();
             this.sessionStore = this.abstractMqttStore.getSessionStore();
-         }
-
-        {// permission pluggable
+        }
+        
+        // permission pluggable
+        {
             this.connectPermission = new DefaultConnectPermission();
             this.pubSubPermission = new DefaultPubSubPermission();
         }
 
         this.subscriptionMatcher = new DefaultSubscriptionTreeMatcher();
-        this.messageDispatcher = new DefaultDispatcherMessage(brokerConfig.getPollThreadNum(), subscriptionMatcher, flowMessageStore,offlineMessageStore);
+        this.messageDispatcher = new DefaultDispatcherMessage(brokerConfig.getPollThreadNum(), subscriptionMatcher, flowMessageStore, offlineMessageStore);
 
-        this.channelEventListener = new ClientLifeCycleHookService(willMessageStore,messageDispatcher);
-        this.remotingServer = new NettyRemotingServer(nettyConfig,channelEventListener);
-        this.reSendMessageService = new ReSendMessageService(offlineMessageStore,flowMessageStore);
+        this.channelEventListener = new ClientLifeCycleHookService(willMessageStore, messageDispatcher);
+        this.remotingServer = new NettyRemotingServer(nettyConfig, channelEventListener);
+        this.reSendMessageService = new ReSendMessageService(offlineMessageStore, flowMessageStore);
 
         int coreThreadNum = Runtime.getRuntime().availableProcessors();
         this.connectExecutor = new ThreadPoolExecutor(coreThreadNum*2,
@@ -149,7 +175,8 @@ public class BrokerController {
         MixAll.printProperties(log,nettyConfig);
         MixAll.printProperties(log,storeConfig);
 
-        {//init and register processor
+        // init and register processor
+        {
             RequestProcessor connectProcessor = new ConnectProcessor(this);
             RequestProcessor disconnectProcessor = new DisconnectProcessor(this);
             RequestProcessor pingProcessor = new PingProcessor();
@@ -161,17 +188,21 @@ public class BrokerController {
             RequestProcessor pubAckProcessor = new PubAckProcessor(flowMessageStore);
             RequestProcessor pubCompProcessor = new PubCompProcessor(flowMessageStore);
 
-            this.remotingServer.registerProcessor(MqttMessageType.CONNECT,connectProcessor,connectExecutor);
-            this.remotingServer.registerProcessor(MqttMessageType.DISCONNECT,disconnectProcessor,connectExecutor);
-            this.remotingServer.registerProcessor(MqttMessageType.PINGREQ,pingProcessor,pingExecutor);
-            this.remotingServer.registerProcessor(MqttMessageType.PUBLISH,publishProcessor,pubExecutor);
-            this.remotingServer.registerProcessor(MqttMessageType.PUBACK,pubAckProcessor,pubExecutor);
-            this.remotingServer.registerProcessor(MqttMessageType.PUBREL,pubRelProcessor,pubExecutor);
-            this.remotingServer.registerProcessor(MqttMessageType.SUBSCRIBE,subscribeProcessor,subExecutor);
-            this.remotingServer.registerProcessor(MqttMessageType.UNSUBSCRIBE,unSubscribeProcessor,subExecutor);
-            this.remotingServer.registerProcessor(MqttMessageType.PUBREC,pubRecProcessor,subExecutor);
-            this.remotingServer.registerProcessor(MqttMessageType.PUBCOMP,pubCompProcessor,subExecutor);
+            this.remotingServer.registerProcessor(MqttMessageType.CONNECT, connectProcessor, connectExecutor);
+            this.remotingServer.registerProcessor(MqttMessageType.DISCONNECT, disconnectProcessor, connectExecutor);
+            
+            this.remotingServer.registerProcessor(MqttMessageType.PINGREQ, pingProcessor, pingExecutor);
+            
+            this.remotingServer.registerProcessor(MqttMessageType.PUBLISH, publishProcessor, pubExecutor);
+            this.remotingServer.registerProcessor(MqttMessageType.PUBACK, pubAckProcessor, pubExecutor);
+            this.remotingServer.registerProcessor(MqttMessageType.PUBREL, pubRelProcessor, pubExecutor);
+            
+            this.remotingServer.registerProcessor(MqttMessageType.SUBSCRIBE, subscribeProcessor, subExecutor);
+            this.remotingServer.registerProcessor(MqttMessageType.UNSUBSCRIBE, unSubscribeProcessor, subExecutor);
+            this.remotingServer.registerProcessor(MqttMessageType.PUBREC, pubRecProcessor, subExecutor);
+            this.remotingServer.registerProcessor(MqttMessageType.PUBCOMP, pubCompProcessor, subExecutor);
         }
+        
         this.messageDispatcher.start();
         this.reSendMessageService.start();
         this.remotingServer.start();

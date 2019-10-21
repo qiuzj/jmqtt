@@ -10,9 +10,10 @@ import java.util.concurrent.TimeUnit;
 public class NettyEventExcutor implements Runnable {
 
     private static final Logger log = LoggerFactory.getLogger(LoggerName.REMOTING);
-
+    /** 事件队列 */
     private LinkedBlockingQueue<NettyEvent> eventQueue = new LinkedBlockingQueue<>();
     private final int maxSize = 1000;
+    /** ClientLifeCycleHookService */
     private ChannelEventListener listener;
     boolean stoped = false;
     private Thread thread;
@@ -31,28 +32,28 @@ public class NettyEventExcutor implements Runnable {
 
     @Override
     public void run() {
-        while(!this.stoped){
-            try{
+        while (!this.stoped) {
+            try {
                 NettyEvent nettyEvent = this.eventQueue.poll(3000, TimeUnit.MILLISECONDS);
-                if(nettyEvent != null && listener != null){
-                    switch (nettyEvent.getEventType()){
+                if (nettyEvent != null && listener != null) {
+                    switch (nettyEvent.getEventType()) {
                         case CONNECT:
-                            listener.onChannelConnect(nettyEvent.getRemoteAddr(),nettyEvent.getChannel());
+                            listener.onChannelConnect(nettyEvent.getRemoteAddr(), nettyEvent.getChannel());
                             break;
                         case CLOSE:
-                            listener.onChannelClose(nettyEvent.getRemoteAddr(),nettyEvent.getChannel());
+                            listener.onChannelClose(nettyEvent.getRemoteAddr(), nettyEvent.getChannel());
                             break;
                         case EXCEPTION:
-                            listener.onChannelException(nettyEvent.getRemoteAddr(),nettyEvent.getChannel());
+                            listener.onChannelException(nettyEvent.getRemoteAddr(), nettyEvent.getChannel());
                             break;
                         case IDLE:
-                            listener.onChannelIdle(nettyEvent.getRemoteAddr(),nettyEvent.getChannel());
+                            listener.onChannelIdle(nettyEvent.getRemoteAddr(), nettyEvent.getChannel());
                             break;
                          default:
                              break;
                     }
                 }
-            }catch(Throwable t){
+            } catch(Throwable t) {
                 log.warn("[NettyEvent] -> service has exception. ", t);
             }
         }

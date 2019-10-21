@@ -25,8 +25,8 @@ public class ClientLifeCycleHookService implements ChannelEventListener {
     @Override
     public void onChannelClose(String remoteAddr, Channel channel) {
         String clientId = NettyUtil.getClientId(channel);
-        if(StringUtils.isNotEmpty(clientId)){
-            if(willMessageStore.hasWillMessage(clientId)){
+        if (StringUtils.isNotEmpty(clientId)) {
+            if (willMessageStore.hasWillMessage(clientId)) {
                 Message willMessage = willMessageStore.getWillMessage(clientId);
                 messageDispatcher.appendMessage(willMessage);
             }

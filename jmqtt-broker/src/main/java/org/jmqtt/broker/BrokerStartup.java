@@ -30,15 +30,18 @@ public class BrokerStartup {
     }
 
     public static BrokerController start(String[] args) throws Exception {
-
+    	/* 解析命令行参数 */
         Options options = buildOptions();
         CommandLineParser parser = new DefaultParser();
-        CommandLine commandLine = parser.parse(options,args);
+        CommandLine commandLine = parser.parse(options, args);
+        
         String jmqttHome = null;
         String jmqttConfigPath = null;
         BrokerConfig brokerConfig = new BrokerConfig();
         NettyConfig nettyConfig = new NettyConfig();
         StoreConfig storeConfig = new StoreConfig();
+        
+        /* 获取命令行参数 */
         if(commandLine != null){
             jmqttHome = commandLine.getOptionValue("h");
             jmqttConfigPath = commandLine.getOptionValue("c");
@@ -52,13 +55,16 @@ public class BrokerStartup {
         if(StringUtils.isEmpty(jmqttHome)){
             throw new Exception("please set JMQTT_HOME.");
         }
+        
+        /* 日志 */
         LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
         JoranConfigurator configurator = new JoranConfigurator();
         configurator.setContext(lc);
         lc.reset();
         configurator.doConfigure(jmqttHome + "/conf/logback_broker.xml");
-
-        BrokerController brokerController = new BrokerController(brokerConfig,nettyConfig, storeConfig);
+        
+        // BrokerController为初始化类，初始化所有的必备环境，其中acl，store的插件配置也必须在这里初始化
+        BrokerController brokerController = new BrokerController(brokerConfig, nettyConfig, storeConfig);
         brokerController.start();
 
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {

@@ -1,5 +1,10 @@
 package org.jmqtt.store;
 
+/**
+ * 抽象存储类. 支持自定义扩展实现
+ *  
+ * @version
+ */
 public abstract class AbstractMqttStore {
 
     protected FlowMessageStore flowMessageStore;

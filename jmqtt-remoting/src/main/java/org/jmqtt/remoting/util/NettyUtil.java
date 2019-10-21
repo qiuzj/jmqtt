@@ -9,7 +9,7 @@ public class NettyUtil {
 
     private static final AttributeKey<String> clientIdAttr = AttributeKey.valueOf(CLIENT_ID);
 
-    public static final void setClientId(Channel channel,String clientId){
+    public static final void setClientId(Channel channel, String clientId){
         channel.attr(clientIdAttr).set(clientId);
     }
 
