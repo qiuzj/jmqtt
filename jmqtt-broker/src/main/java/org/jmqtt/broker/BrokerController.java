@@ -165,9 +165,7 @@ public class BrokerController {
                 pingQueue,
                 new ThreadFactoryImpl("PingThread"),
                 new RejectHandler("heartbeat",100000));
-
     }
-
 
     public void start(){
 
@@ -175,7 +173,7 @@ public class BrokerController {
         MixAll.printProperties(log,nettyConfig);
         MixAll.printProperties(log,storeConfig);
 
-        // init and register processor
+        // init and register processor. 初始化处理器，并将报文类型与处理器、线程池关联，同时注册到远程Netty服务中.
         {
             RequestProcessor connectProcessor = new ConnectProcessor(this);
             RequestProcessor disconnectProcessor = new DisconnectProcessor(this);
@@ -203,8 +201,11 @@ public class BrokerController {
             this.remotingServer.registerProcessor(MqttMessageType.PUBCOMP, pubCompProcessor, subExecutor);
         }
         
+        // 启动消息分发器
         this.messageDispatcher.start();
+        // 启动重发线程
         this.reSendMessageService.start();
+        // 启动Netty
         this.remotingServer.start();
         log.info("JMqtt Server start success and version = {}",brokerConfig.getVersion());
     }

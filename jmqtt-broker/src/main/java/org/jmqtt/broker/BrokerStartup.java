@@ -1,8 +1,17 @@
 package org.jmqtt.broker;
 
-import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.classic.joran.JoranConfigurator;
-import org.apache.commons.cli.*;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Objects;
+import java.util.Properties;
+
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
 import org.apache.commons.lang3.StringUtils;
 import org.jmqtt.common.config.BrokerConfig;
 import org.jmqtt.common.config.NettyConfig;
@@ -10,12 +19,8 @@ import org.jmqtt.common.config.StoreConfig;
 import org.jmqtt.common.helper.MixAll;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.Objects;
-import java.util.Properties;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.classic.joran.JoranConfigurator;
 
 public class BrokerStartup {
 
@@ -42,17 +47,17 @@ public class BrokerStartup {
         StoreConfig storeConfig = new StoreConfig();
         
         /* 获取命令行参数 */
-        if(commandLine != null){
+        if (commandLine != null) {
             jmqttHome = commandLine.getOptionValue("h");
             jmqttConfigPath = commandLine.getOptionValue("c");
         }
-        if(StringUtils.isNotEmpty(jmqttConfigPath)){
-            initConfig(jmqttConfigPath,brokerConfig,nettyConfig,storeConfig);
+        if (StringUtils.isNotEmpty(jmqttConfigPath)) {
+            initConfig(jmqttConfigPath, brokerConfig, nettyConfig, storeConfig);
         }
-        if(StringUtils.isEmpty(jmqttHome)){
+        if (StringUtils.isEmpty(jmqttHome)) {
             jmqttHome = brokerConfig.getJmqttHome();
         }
-        if(StringUtils.isEmpty(jmqttHome)){
+        if (StringUtils.isEmpty(jmqttHome)) {
             throw new Exception("please set JMQTT_HOME.");
         }
         
@@ -77,6 +82,11 @@ public class BrokerStartup {
         return brokerController;
     }
 
+    /**
+     * 构建apache命令行Options
+     *  
+     * @return
+     */
     private static Options buildOptions(){
         Options options = new Options();
         Option opt = new Option("h",true,"jmqttHome,eg: /wls/xxx");
@@ -90,15 +100,23 @@ public class BrokerStartup {
         return options;
     }
 
-    private static void initConfig(String jmqttConfigPath,BrokerConfig brokerConfig,NettyConfig nettyConfig,StoreConfig storeConfig){
+    /**
+     * 读取配置，保存到Config对象
+     *  
+     * @param jmqttConfigPath
+     * @param brokerConfig
+     * @param nettyConfig
+     * @param storeConfig
+     */
+    private static void initConfig(String jmqttConfigPath, BrokerConfig brokerConfig, NettyConfig nettyConfig, StoreConfig storeConfig){
         Properties properties = new Properties();
         BufferedReader  bufferedReader = null;
         try {
             bufferedReader = new BufferedReader(new FileReader(jmqttConfigPath));
             properties.load(bufferedReader);
-            MixAll.properties2POJO(properties,brokerConfig);
-            MixAll.properties2POJO(properties,nettyConfig);
-            MixAll.properties2POJO(properties,storeConfig);
+            MixAll.properties2POJO(properties, brokerConfig);
+            MixAll.properties2POJO(properties, nettyConfig);
+            MixAll.properties2POJO(properties, storeConfig);
         } catch (FileNotFoundException e) {
             System.out.println("jmqtt.properties cannot find,cause = " + e);
         } catch (IOException e) {

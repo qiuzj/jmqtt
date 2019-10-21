@@ -2,7 +2,7 @@ package org.jmqtt.common.config;
 
 public class BrokerConfig {
 
-    private String jmqttHome = System.getProperty("jmqttHome",System.getenv("JMQTT_HOME"));
+    private String jmqttHome = System.getProperty("jmqttHome", System.getenv("JMQTT_HOME"));
 
     private String version = "1.0.0";
 

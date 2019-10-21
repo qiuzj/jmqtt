@@ -60,13 +60,13 @@ public class NettyRemotingServer implements RemotingServer {
         this.processorTable = new HashMap<>();
         this.nettyEventExcutor = new NettyEventExcutor(listener);
 
-        if (!nettyConfig.isUseEpoll()) {
+        if (!nettyConfig.isUseEpoll()) { // Nio
             selectorGroup = new NioEventLoopGroup(nettyConfig.getSelectorThreadNum(),
                     new ThreadFactoryImpl("SelectorEventGroup"));
             ioGroup = new NioEventLoopGroup(nettyConfig.getIoThreadNum(),
                     new ThreadFactoryImpl("IOEventGroup"));
             clazz = NioServerSocketChannel.class;
-        }else{
+        } else { // Epoll
             selectorGroup = new EpollEventLoopGroup(nettyConfig.getSelectorThreadNum(),
                     new ThreadFactoryImpl("SelectorEventGroup"));
             ioGroup = new EpollEventLoopGroup(nettyConfig.getIoThreadNum(),
@@ -87,6 +87,10 @@ public class NettyRemotingServer implements RemotingServer {
         }
     }
 
+    /**
+     * 启动Websocket服务
+     * 
+     */
     private void startWebsocketServer(){
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(selectorGroup, ioGroup)
@@ -127,7 +131,7 @@ public class NettyRemotingServer implements RemotingServer {
     }
 
     /**
-     * 启动Netty服务
+     * 启动Netty TCP服务
      *  
      */
     private void startTcpServer(){
