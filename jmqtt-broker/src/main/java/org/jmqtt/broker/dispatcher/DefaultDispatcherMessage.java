@@ -59,20 +59,20 @@ public class DefaultDispatcherMessage implements MessageDispatcher {
             @Override
             public void run() {
                 int waitTime = 100;
-                while(!stoped){
+                while (!stoped) {
                     try {
-                        List<Message> messageList = new ArrayList(32);
-                        for(int i = 0; i < 32; i++){
+                        List<Message> messageList = new ArrayList<>(32);
+                        for (int i = 0; i < 32; i++) {
                             Message message = messageQueue.poll(waitTime, TimeUnit.MILLISECONDS);
-                            if(Objects.nonNull(message)){
+                            if (Objects.nonNull(message)) {
                                 messageList.add(message);
                                 waitTime = 100;
-                            }else{
+                            } else {
                                 waitTime = 3000;
                                 break;
                             }
                         }
-                        if(messageList.size() > 0){
+                        if (messageList.size() > 0) {
                             AsyncDispatcher dispatcher = new AsyncDispatcher(messageList);
                             pollThread.submit(dispatcher);
                         }

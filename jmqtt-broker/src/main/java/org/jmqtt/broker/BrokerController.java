@@ -71,7 +71,7 @@ public class BrokerController {
     private LinkedBlockingQueue pubQueue;
     private LinkedBlockingQueue subQueue;
     private LinkedBlockingQueue pingQueue;
-    
+    /** ClientLifeCycleHookService */
     private ChannelEventListener channelEventListener;
     private NettyRemotingServer remotingServer;
     private MessageDispatcher messageDispatcher;
@@ -179,9 +179,9 @@ public class BrokerController {
             RequestProcessor disconnectProcessor = new DisconnectProcessor(this);
             RequestProcessor pingProcessor = new PingProcessor();
             RequestProcessor publishProcessor = new PublishProcessor(this);
-            RequestProcessor pubRelProcessor = new PubRelProcessor(messageDispatcher, flowMessageStore,retainMessageStore);
+            RequestProcessor pubRelProcessor = new PubRelProcessor(messageDispatcher, flowMessageStore, retainMessageStore);
             RequestProcessor subscribeProcessor = new SubscribeProcessor(this);
-            RequestProcessor unSubscribeProcessor = new UnSubscribeProcessor(subscriptionMatcher,subscriptionStore);
+            RequestProcessor unSubscribeProcessor = new UnSubscribeProcessor(subscriptionMatcher, subscriptionStore);
             RequestProcessor pubRecProcessor = new PubRecProcessor(flowMessageStore);
             RequestProcessor pubAckProcessor = new PubAckProcessor(flowMessageStore);
             RequestProcessor pubCompProcessor = new PubCompProcessor(flowMessageStore);
