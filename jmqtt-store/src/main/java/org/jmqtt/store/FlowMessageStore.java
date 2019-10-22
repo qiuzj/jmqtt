@@ -13,16 +13,23 @@ public interface FlowMessageStore {
 
     Message getRecMsg(String clientId, int msgId);
 
-    boolean cacheRecMsg(String clientId,Message message);
+    boolean cacheRecMsg(String clientId, Message message);
 
-    Message releaseRecMsg(String clientId,int msgId);
+    Message releaseRecMsg(String clientId, int msgId);
 
-    boolean cacheSendMsg(String clientId,Message message);
+    /**
+     * 缓存已发送的消息
+     *  
+     * @param clientId
+     * @param message
+     * @return
+     */
+    boolean cacheSendMsg(String clientId, Message message);
 
     Collection<Message> getAllSendMsg(String clientId);
 
-    boolean releaseSendMsg(String clientId,int msgId);
+    boolean releaseSendMsg(String clientId, int msgId);
 
-    boolean containSendMsg(String clientId,int msgId);
+    boolean containSendMsg(String clientId, int msgId);
 
 }

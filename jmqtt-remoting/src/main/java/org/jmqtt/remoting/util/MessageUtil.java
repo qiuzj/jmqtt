@@ -1,13 +1,26 @@
 package org.jmqtt.remoting.util;
 
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.buffer.UnpooledHeapByteBuf;
-import io.netty.handler.codec.mqtt.*;
+import java.util.List;
+
 import org.jmqtt.common.bean.Message;
 import org.jmqtt.common.bean.MessageHeader;
 
-import java.util.List;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.mqtt.MqttConnAckMessage;
+import io.netty.handler.codec.mqtt.MqttConnAckVariableHeader;
+import io.netty.handler.codec.mqtt.MqttConnectReturnCode;
+import io.netty.handler.codec.mqtt.MqttFixedHeader;
+import io.netty.handler.codec.mqtt.MqttMessage;
+import io.netty.handler.codec.mqtt.MqttMessageIdVariableHeader;
+import io.netty.handler.codec.mqtt.MqttMessageType;
+import io.netty.handler.codec.mqtt.MqttPubAckMessage;
+import io.netty.handler.codec.mqtt.MqttPublishMessage;
+import io.netty.handler.codec.mqtt.MqttPublishVariableHeader;
+import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttSubAckMessage;
+import io.netty.handler.codec.mqtt.MqttSubAckPayload;
+import io.netty.handler.codec.mqtt.MqttUnsubAckMessage;
 
 /**
  * transfer message from Message and MqttMessage
@@ -20,7 +33,6 @@ public class MessageUtil {
         return bytes;
     }
 
-
     public static MqttUnsubAckMessage getUnSubAckMessage(int messageId){
         MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.UNSUBACK,false,MqttQoS.AT_MOST_ONCE,false,0);
         MqttMessageIdVariableHeader idVariableHeader = MqttMessageIdVariableHeader.from(messageId);
@@ -32,8 +44,15 @@ public class MessageUtil {
         return idVariableHeader.messageId();
     }
 
-    public static int getMinQos(int qos1,int qos2){
-        if(qos1 < qos2){
+    /**
+     * 比较并返回最小的QoS
+     *  
+     * @param qos1
+     * @param qos2
+     * @return
+     */
+    public static int getMinQos(int qos1, int qos2) {
+        if (qos1 < qos2) {
             return qos1;
         }
         return qos2;
@@ -45,16 +64,25 @@ public class MessageUtil {
         return new MqttMessage(fixedHeader,idVariableHeader);
     }
 
-    public static MqttPublishMessage getPubMessage(Message message,boolean dup,int qos,int messageId){
-        MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH,dup,MqttQoS.valueOf(qos),false,0);
-        MqttPublishVariableHeader publishVariableHeader = new MqttPublishVariableHeader((String) message.getHeader(MessageHeader.TOPIC),messageId);
+    /**
+     * 构造MQTT协议的"发布消息"报文对象
+     *  
+     * @param message
+     * @param dup
+     * @param qos
+     * @param messageId
+     * @return
+     */
+    public static MqttPublishMessage getPubMessage(Message message, boolean dup, int qos, int messageId) {
+        MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBLISH, dup, MqttQoS.valueOf(qos), false, 0);
+        MqttPublishVariableHeader publishVariableHeader = new MqttPublishVariableHeader((String) message.getHeader(MessageHeader.TOPIC), messageId);
         ByteBuf heapBuf;
-        if(message.getPayload() == null){
+        if (message.getPayload() == null) {
             heapBuf = Unpooled.EMPTY_BUFFER;
-        }else{
-            heapBuf = Unpooled.wrappedBuffer((byte[])message.getPayload());
+        } else {
+            heapBuf = Unpooled.wrappedBuffer((byte[]) message.getPayload());
         }
-        return new MqttPublishMessage(fixedHeader,publishVariableHeader,heapBuf);
+        return new MqttPublishMessage(fixedHeader, publishVariableHeader, heapBuf);
     }
 
     public static MqttMessage getSubAckMessage(int messageId, List<Integer> qos){

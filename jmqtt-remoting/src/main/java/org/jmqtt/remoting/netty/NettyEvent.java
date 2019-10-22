@@ -2,6 +2,11 @@ package org.jmqtt.remoting.netty;
 
 import io.netty.channel.Channel;
 
+/**
+ * 用于封装Netty的4种事件. see NettyEventType
+ *  
+ * @version
+ */
 public class NettyEvent {
 
     private String remoteAddr;

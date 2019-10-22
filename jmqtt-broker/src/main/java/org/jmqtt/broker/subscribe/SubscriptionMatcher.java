@@ -11,6 +11,7 @@ public interface SubscriptionMatcher {
 
     /**
      * 添加订阅到订阅树中
+     * 
      * @param topic 订阅的Topic
      * @param subscription 订阅对象
      * @return  true：新增的订阅，无该topic存在或者qos不同，那么必须分发retain消息
@@ -20,6 +21,12 @@ public interface SubscriptionMatcher {
 
     boolean unSubscribe(String topic,String clientId);
 
+    /**
+     * 匹配所有订阅者
+     *  
+     * @param topic
+     * @return
+     */
     Set<Subscription> match(String topic);
 
     /**
@@ -28,5 +35,5 @@ public interface SubscriptionMatcher {
      * @param subTopic
      * @return
      */
-    boolean isMatch(String pubTopic,String subTopic);
+    boolean isMatch(String pubTopic, String subTopic);
 }

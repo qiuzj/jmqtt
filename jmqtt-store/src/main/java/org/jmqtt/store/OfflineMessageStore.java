@@ -5,7 +5,7 @@ import org.jmqtt.common.bean.Message;
 import java.util.Collection;
 
 /**
- * cleansession message
+ * cleansession message. 离线消息存储
  */
 public interface OfflineMessageStore {
 
@@ -13,6 +13,13 @@ public interface OfflineMessageStore {
 
     boolean containOfflineMsg(String clientId);
 
+    /**
+     * 暂存离线消息
+     *  
+     * @param clientId
+     * @param message
+     * @return
+     */
     boolean addOfflineMessage(String clientId, Message message);
 
     Collection<Message> getAllOfflineMessage(String clientId);

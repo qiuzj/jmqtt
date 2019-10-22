@@ -7,6 +7,11 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Netty事件执行器
+ *  
+ * @version
+ */
 public class NettyEventExcutor implements Runnable {
 
     private static final Logger log = LoggerFactory.getLogger(LoggerName.REMOTING);
@@ -22,6 +27,11 @@ public class NettyEventExcutor implements Runnable {
         this.listener = channelEventListener;
     }
 
+    /**
+     * 新增事件
+     *  
+     * @param nettyEvent
+     */
     public void putNettyEvent(final NettyEvent nettyEvent){
         if (this.eventQueue.size() <= maxSize) {
             this.eventQueue.add(nettyEvent);
@@ -36,6 +46,7 @@ public class NettyEventExcutor implements Runnable {
             try {
                 NettyEvent nettyEvent = this.eventQueue.poll(3000, TimeUnit.MILLISECONDS);
                 if (nettyEvent != null && listener != null) {
+                	// 处理4种事件
                     switch (nettyEvent.getEventType()) {
                         case CONNECT:
                             listener.onChannelConnect(nettyEvent.getRemoteAddr(), nettyEvent.getChannel());

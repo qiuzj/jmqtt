@@ -8,12 +8,17 @@ import org.jmqtt.broker.dispatcher.MessageDispatcher;
 import org.jmqtt.remoting.util.NettyUtil;
 import org.jmqtt.store.WillMessageStore;
 
+/**
+ * 客户端连接生命周期处理服务. 对应于see NettyEventType的4种事件
+ *  
+ * @version
+ */
 public class ClientLifeCycleHookService implements ChannelEventListener {
 
     private WillMessageStore willMessageStore;
     private MessageDispatcher messageDispatcher;
 
-    public ClientLifeCycleHookService(WillMessageStore willMessageStore,MessageDispatcher messageDispatcher){
+    public ClientLifeCycleHookService(WillMessageStore willMessageStore, MessageDispatcher messageDispatcher){
         this.willMessageStore = willMessageStore;
         this.messageDispatcher = messageDispatcher;
     }
@@ -28,7 +33,7 @@ public class ClientLifeCycleHookService implements ChannelEventListener {
         if (StringUtils.isNotEmpty(clientId)) {
             if (willMessageStore.hasWillMessage(clientId)) {
                 Message willMessage = willMessageStore.getWillMessage(clientId);
-                messageDispatcher.appendMessage(willMessage);
+                messageDispatcher.appendMessage(willMessage); // 发布遗嘱消息
             }
         }
     }

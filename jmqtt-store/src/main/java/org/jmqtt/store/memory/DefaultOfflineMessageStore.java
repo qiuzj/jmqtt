@@ -35,20 +35,21 @@ public class DefaultOfflineMessageStore implements OfflineMessageStore {
 
     @Override
     public boolean addOfflineMessage(String clientId, Message message) {
-        if(!this.offlineTable.containsKey(clientId)){
+        if (!this.offlineTable.containsKey(clientId)) {
             synchronized (offlineTable){
-                if(!offlineTable.containsKey(clientId)){
-                    BlockingQueue<Message> queue = new ArrayBlockingQueue(1000);
-                    offlineTable.put(clientId,queue);
+                if (!offlineTable.containsKey(clientId)) {
+                    BlockingQueue<Message> queue = new ArrayBlockingQueue<>(1000);
+                    offlineTable.put(clientId, queue);
                 }
             }
         }
         BlockingQueue<Message> queue = this.offlineTable.get(clientId);
-        while(queue.size() > msgMaxNum){
+        // 离线消息太多则丢弃掉超出部分
+        while (queue.size() > msgMaxNum) {
             try {
                 queue.take();
             } catch (InterruptedException e) {
-                log.warn("[StoreOfflineMessage] -> Store Offline message error,clientId={},msgId={}",clientId,message.getMsgId());
+                log.warn("[StoreOfflineMessage] -> Store Offline message error,clientId={},msgId={}", clientId, message.getMsgId());
             }
         }
         queue.offer(message);

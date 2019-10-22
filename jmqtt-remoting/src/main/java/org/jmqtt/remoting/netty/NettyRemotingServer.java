@@ -53,6 +53,7 @@ public class NettyRemotingServer implements RemotingServer {
     private Class<? extends ServerChannel> clazz;
     /** 报文处理器列表 */
     private Map<MqttMessageType, Pair<RequestProcessor, ExecutorService>> processorTable;
+    /** Netty事件执行器 */
     private NettyEventExcutor nettyEventExcutor;
 
     public NettyRemotingServer(NettyConfig nettyConfig, ChannelEventListener listener) {

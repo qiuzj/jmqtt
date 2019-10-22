@@ -5,22 +5,29 @@ import io.netty.channel.ChannelHandlerContext;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * 一个客户端会话.
+ *  
+ * @version
+ */
 public class ClientSession {
-
+	/** 客户端标识 */
     private String clientId;
+    /***/
     private boolean cleanSession;
+    /** 处理客户端连接ChannelHandler对应的ChannelHandlerContext，内部维护了对应的客户端连接Channel、ChannelHandler和Pipeline */
     private transient ChannelHandlerContext ctx;
 
     private AtomicInteger messageIdCounter = new AtomicInteger(1);
 
     public ClientSession(){}
 
-    public ClientSession(String clientId, boolean cleanSession){
+    public ClientSession(String clientId, boolean cleanSession) {
         this.clientId = clientId;
         this.cleanSession = cleanSession;
     }
 
-    public ClientSession(String clientId, boolean cleanSession,ChannelHandlerContext ctx){
+    public ClientSession(String clientId, boolean cleanSession, ChannelHandlerContext ctx) {
         this.clientId = clientId;
         this.cleanSession = cleanSession;
         this.ctx = ctx;
@@ -29,7 +36,6 @@ public class ClientSession {
     public String getClientId() {
         return clientId;
     }
-
 
     public void setClientId(String clientId) {
         this.clientId = clientId;
@@ -51,15 +57,19 @@ public class ClientSession {
         this.ctx = ctx;
     }
 
+    /**
+     * 生成消息ID
+     *  
+     * @return
+     */
     public int generateMessageId(){
         int messageId = messageIdCounter.getAndIncrement();
-        messageId = Math.abs( messageId % 0xFFFF);
-        if(messageId == 0){
+        messageId = Math.abs(messageId % 0xFFFF);
+        if (messageId == 0) {
             return generateMessageId();
         }
         return messageId;
     }
-
 
     @Override
     public boolean equals(Object o) {

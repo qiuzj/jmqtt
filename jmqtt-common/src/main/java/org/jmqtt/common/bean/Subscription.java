@@ -2,12 +2,17 @@ package org.jmqtt.common.bean;
 
 import java.util.Objects;
 
+/**
+ * 订阅记录. Client订阅了某个QoS的Topic
+ *  
+ * @version
+ */
 public class Subscription {
     private String clientId;
     private int qos;
     private String topic;
 
-    public Subscription(String clientId,String topic,int qos){
+    public Subscription(String clientId, String topic, int qos) {
         this.clientId = clientId;
         this.topic = topic;
         this.qos = qos;

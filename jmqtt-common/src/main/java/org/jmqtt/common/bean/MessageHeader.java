@@ -1,5 +1,10 @@
 package org.jmqtt.common.bean;
 
+/**
+ * 维护消息头的各个字段名
+ *  
+ * @version
+ */
 public class MessageHeader {
 
     public static final String TOPIC = "topic";

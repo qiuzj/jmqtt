@@ -8,38 +8,37 @@ import java.util.Objects;
  * inner message transfer from MqttMessage
  */
 public class Message {
-
+	/** 消息ID */
     private int msgId;
-
-    private Map<String,Object> headers;
-
+    /** 消息头. see MessageHeader */
+    private Map<String, Object> headers;
+    /** 客户端标识 */
     private String clientId;
-
+    /** 报文类型 */
     private Type type;
-
+    /** 有效负载 */
     private byte[] payload;
 
-    public Message(){};
+    public Message() {};
 
-    public Message(Type type,Map<String,Object> headers,byte[] payload){
+    public Message(Type type, Map<String,Object> headers, byte[] payload) {
         this.type = type;
         this.headers = headers;
         this.payload = payload;
     }
 
-    public Object putHeader(String key,Object value){
-        if(headers == null){
+    public Object putHeader(String key, Object value) {
+        if (headers == null) {
             headers = new HashMap<>();
         }
-        return headers.put(key,value);
-    };
+        return headers.put(key, value);
+    }
 
-
-    public Object removeHeader(String key){
+    public Object removeHeader(String key) {
         return headers.remove(key);
     }
 
-    public Object getHeader(String key){
+    public Object getHeader(String key) {
         return headers.get(key);
     }
 

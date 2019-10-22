@@ -83,8 +83,8 @@ public class DefaultSubscriptionTreeMatcher implements SubscriptionMatcher {
 
     @Override
     public Set<Subscription> match(String topic) {
-        Set<Subscription> subscriptions =  new HashSet<>();
-        recursionMatch(topic,root,subscriptions);
+        Set<Subscription> subscriptions = new HashSet<>();
+        recursionMatch(topic, root, subscriptions);
         return subscriptions;
     }
 
@@ -118,23 +118,30 @@ public class DefaultSubscriptionTreeMatcher implements SubscriptionMatcher {
         return false;
     }
 
-    private void recursionMatch(String topic,TreeNode node,Set<Subscription> subscriptions){
+    /**
+     * 递归匹配所有订阅该topic的订阅者
+     *  
+     * @param topic
+     * @param node
+     * @param subscriptions
+     */
+    private void recursionMatch(String topic, TreeNode node, Set<Subscription> subscriptions){
         String[] topics = topic.split("/");
         Token token = new Token(topics[0]);
         List<TreeNode> childNodes = node.getChildren();
-        if(topics.length > 1){
-            String nextTopic = topic.substring(topic.indexOf("/")+1);
-            for(TreeNode itemNode : childNodes){
-                if(itemNode.getToken().equals(token) || itemNode.getToken().equals(SINGLE)){
-                    recursionMatch(nextTopic,itemNode,subscriptions);
+        if (topics.length > 1) {
+            String nextTopic = topic.substring(topic.indexOf("/") + 1);
+            for (TreeNode itemNode : childNodes) {
+                if (itemNode.getToken().equals(token) || itemNode.getToken().equals(SINGLE)) {
+                    recursionMatch(nextTopic, itemNode, subscriptions);
                 }
-                if(itemNode.getToken().equals(MULTY)){
+                if (itemNode.getToken().equals(MULTY)) {
                     subscriptions.addAll(itemNode.getSubscribers());
                 }
             }
-        }else{
-            for(TreeNode itemNode : childNodes){
-                if(itemNode.getToken().equals(token)  || itemNode.getToken().equals(SINGLE) || itemNode.getToken().equals(MULTY)){
+        } else {
+            for (TreeNode itemNode : childNodes) {
+                if (itemNode.getToken().equals(token) || itemNode.getToken().equals(SINGLE) || itemNode.getToken().equals(MULTY)) {
                     subscriptions.addAll(itemNode.getSubscribers());
                 }
             }
@@ -162,20 +169,27 @@ public class DefaultSubscriptionTreeMatcher implements SubscriptionMatcher {
         }
     }
 
+    /**
+     * 主题树节点
+     *  
+     */
     class TreeNode {
+    	/** 节点标识 */
         private Token token;
+        /** 节点订阅者 */
         private Set<Subscription> subscribers = new CopyOnWriteArraySet<>();
+        /** 子节点列表 */
         private List<TreeNode> children = new CopyOnWriteArrayList<>();
 
-        public TreeNode(Token token){
+        public TreeNode(Token token) {
             this.token = token;
         }
 
-        public void addSubscriber(Subscription subscription){
+        public void addSubscriber(Subscription subscription) {
             this.subscribers.add(subscription);
         }
 
-        public void addChild(TreeNode treeNode){
+        public void addChild(TreeNode treeNode) {
             this.children.add(treeNode);
         }
 
@@ -187,13 +201,13 @@ public class DefaultSubscriptionTreeMatcher implements SubscriptionMatcher {
             return subscribers;
         }
 
-        public List<TreeNode> getChildren(){
+        public List<TreeNode> getChildren() {
           return this.children;
-        };
+        }
 
-        public TreeNode getChildNodeByToken(Token token){
-            for(TreeNode childNode : this.children){
-                if(childNode.getToken().equals(token)){
+        public TreeNode getChildNodeByToken(Token token) {
+            for (TreeNode childNode : this.children) {
+                if (childNode.getToken().equals(token)) {
                     return childNode;
                 }
             }

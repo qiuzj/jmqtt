@@ -7,8 +7,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultWillMessageStore implements WillMessageStore {
-
-    private final Map<String /*clientId*/,Message> willTable = new ConcurrentHashMap<>();
+	/** 存储遗嘱消息 */
+    private final Map<String /*clientId*/, Message> willTable = new ConcurrentHashMap<>();
 
     public DefaultWillMessageStore(){ }
 
