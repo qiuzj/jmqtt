@@ -5,7 +5,6 @@ import org.jmqtt.broker.acl.ConnectPermission;
 
 public class DefaultConnectPermission implements ConnectPermission {
 
-
     @Override
     public boolean clientIdVerfy(String clientId) {
         return true;

@@ -71,6 +71,7 @@ public class BrokerController {
     private LinkedBlockingQueue pubQueue;
     private LinkedBlockingQueue subQueue;
     private LinkedBlockingQueue pingQueue;
+    
     /** ClientLifeCycleHookService */
     private ChannelEventListener channelEventListener;
     private NettyRemotingServer remotingServer;

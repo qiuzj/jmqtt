@@ -182,30 +182,31 @@ public class NettyRemotingServer implements RemotingServer {
     }
 
     /**
-     * 非连接报文处理器
+     * MQTT报文处理器
      *  
-     * @version NettyRemotingServer
      */
     class NettyMqttHandler extends ChannelInboundHandlerAdapter {
 
         @Override
-        public void channelRead(ChannelHandlerContext ctx, Object obj){
+        public void channelRead(ChannelHandlerContext ctx, Object obj) {
             MqttMessage mqttMessage = (MqttMessage) obj;
-            if(mqttMessage != null && mqttMessage.decoderResult().isSuccess()){
+            if (mqttMessage != null && mqttMessage.decoderResult().isSuccess()) {
                 MqttMessageType messageType = mqttMessage.fixedHeader().messageType();
-                log.debug("[Remoting] -> receive mqtt code,type:{}",messageType.value());
+                log.debug("[Remoting] -> receive mqtt code,type:{}", messageType.value());
+                
                 Runnable runnable = new Runnable() {
                     @Override
                     public void run() {
-                        processorTable.get(messageType).getObject1().processRequest(ctx,mqttMessage);
+                        processorTable.get(messageType).getObject1().processRequest(ctx, mqttMessage);
                     }
                 };
-                try{
+                
+                try {
                     processorTable.get(messageType).getObject2().submit(runnable);
-                }catch (RejectedExecutionException ex){
-                    log.warn("Reject mqtt request,cause={}",ex.getMessage());
+                } catch (RejectedExecutionException ex) {
+                    log.warn("Reject mqtt request,cause={}", ex.getMessage());
                 }
-            }else{
+            } else {
                 ctx.close();
             }
         }

@@ -13,15 +13,15 @@ public interface ConnectPermission {
     /**
      * if the client is on blacklist,is not allowed to connect
      */
-    boolean onBlacklist(String remoteAddr,String clientId);
+    boolean onBlacklist(String remoteAddr, String clientId);
 
     /**
      * verfy the clientId,username,password whether true or not
      */
-    boolean authentication(String clientId,String userName,byte[] password);
+    boolean authentication(String clientId, String userName, byte[] password);
 
     /**
      * verfy the client's heartbeat time whether the compliance
      */
-    boolean verfyHeartbeatTime(String clientId,int time);
+    boolean verfyHeartbeatTime(String clientId, int time);
 }
