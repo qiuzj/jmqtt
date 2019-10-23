@@ -1,6 +1,6 @@
 package org.jmqtt.common.helper;
 
-public class Pair<T,K> {
+public class Pair<T, K> {
     private T object1;
     private K object2;
 

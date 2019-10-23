@@ -14,16 +14,27 @@ public class RemotingHelper {
 
     private static final Logger log = LoggerFactory.getLogger(LoggerName.REMOTING);
 
+    /**
+     * 关闭Channel
+     *  
+     * @param channel
+     */
     public static void closeChannel(Channel channel){
         String remoteAddr = getRemoteAddr(channel);
         channel.close().addListener(new ChannelFutureListener() {
             @Override
             public void operationComplete(ChannelFuture channelFuture) throws Exception {
-                log.info("[closeChannel] -> close the connection,addr={},result={}",remoteAddr,channelFuture.isSuccess());
+                log.info("[closeChannel] -> close the connection,addr={},result={}", remoteAddr, channelFuture.isSuccess());
             }
         });
     }
 
+    /**
+     * 获取Channel的远程地址
+     *  
+     * @param channel
+     * @return
+     */
     public static String getRemoteAddr(Channel channel){
         if (null == channel) {
             return "";

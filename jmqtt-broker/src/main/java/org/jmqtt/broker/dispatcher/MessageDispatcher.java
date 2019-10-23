@@ -9,8 +9,16 @@ import org.jmqtt.common.bean.Message;
  */
 public interface MessageDispatcher {
 
+	/**
+	 * 启动消费和发送线程
+	 *  
+	 */
     void start();
 
+    /**
+     * 关闭消费和发送线程
+     *  
+     */
     void shutdown();
 
     /**

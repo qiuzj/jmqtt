@@ -1,22 +1,5 @@
 package org.jmqtt.broker.dispatcher;
 
-
-import io.netty.handler.codec.mqtt.MqttPublishMessage;
-import org.jmqtt.broker.subscribe.SubscriptionMatcher;
-import org.jmqtt.remoting.session.ClientSession;
-import org.jmqtt.common.bean.Message;
-import org.jmqtt.common.bean.MessageHeader;
-import org.jmqtt.common.bean.Subscription;
-import org.jmqtt.common.helper.RejectHandler;
-import org.jmqtt.common.helper.ThreadFactoryImpl;
-import org.jmqtt.common.log.LoggerName;
-import org.jmqtt.remoting.session.ConnectManager;
-import org.jmqtt.remoting.util.MessageUtil;
-import org.jmqtt.store.FlowMessageStore;
-import org.jmqtt.store.OfflineMessageStore;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -25,6 +8,23 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
+import org.jmqtt.broker.subscribe.SubscriptionMatcher;
+import org.jmqtt.common.bean.Message;
+import org.jmqtt.common.bean.MessageHeader;
+import org.jmqtt.common.bean.Subscription;
+import org.jmqtt.common.helper.RejectHandler;
+import org.jmqtt.common.helper.ThreadFactoryImpl;
+import org.jmqtt.common.log.LoggerName;
+import org.jmqtt.remoting.session.ClientSession;
+import org.jmqtt.remoting.session.ConnectManager;
+import org.jmqtt.remoting.util.MessageUtil;
+import org.jmqtt.store.FlowMessageStore;
+import org.jmqtt.store.OfflineMessageStore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.netty.handler.codec.mqtt.MqttPublishMessage;
 
 public class DefaultDispatcherMessage implements MessageDispatcher {
 
@@ -48,6 +48,7 @@ public class DefaultDispatcherMessage implements MessageDispatcher {
 
     @Override
     public void start() {
+    	// 初始化消息发送线程池
         this.pollThread = new ThreadPoolExecutor(pollThreadNum,
                 pollThreadNum,
                 60 * 1000,
@@ -56,6 +57,7 @@ public class DefaultDispatcherMessage implements MessageDispatcher {
                 new ThreadFactoryImpl("pollMessage2Subscriber"),
                 new RejectHandler("pollMessage", 100000));
 
+        // 不断消费messageQueue，并按批提交到pollThread进行发送
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -99,7 +101,7 @@ public class DefaultDispatcherMessage implements MessageDispatcher {
     public void shutdown(){
         this.stoped = true;
         this.pollThread.shutdown();
-    };
+    }
 
     /**
      * 异步发布一批消息. 如果客户端不在线，则进行离线存储.

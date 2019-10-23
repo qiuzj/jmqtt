@@ -41,10 +41,10 @@ public class NettyConnectHandler extends ChannelDuplexHandler {
     }
 
     @Override
-    public void userEventTriggered(ChannelHandlerContext ctx, Object evt){
-        if(evt instanceof IdleStateHandler){
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
+        if (evt instanceof IdleStateEvent) {
             IdleStateEvent event = (IdleStateEvent) evt;
-            if(event.state().equals(IdleState.ALL_IDLE)){
+            if (event.state().equals(IdleState.ALL_IDLE)) {
                 final String remoteAddr = RemotingHelper.getRemoteAddr(ctx.channel());
                 log.warn("[HEART_BEAT] -> IDLE exception, addr = {}", remoteAddr);
                 RemotingHelper.closeChannel(ctx.channel());
