@@ -116,9 +116,9 @@ public class MessageUtil {
         return new MqttPubAckMessage(fixedHeader,idVariableHeader);
     }
 
-    public static MqttConnAckMessage getConnectAckMessage(MqttConnectReturnCode returnCode,boolean sessionPresent){
+    public static MqttConnAckMessage getConnectAckMessage(MqttConnectReturnCode returnCode, boolean sessionPresent) {
         MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.CONNACK, false, MqttQoS.AT_MOST_ONCE, false, 0);
-        MqttConnAckVariableHeader variableHeade = new MqttConnAckVariableHeader(returnCode,sessionPresent);
-        return new MqttConnAckMessage(fixedHeader,variableHeade);
+        MqttConnAckVariableHeader variableHeader = new MqttConnAckVariableHeader(returnCode, sessionPresent);
+        return new MqttConnAckMessage(fixedHeader, variableHeader);
     }
 }

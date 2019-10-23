@@ -11,6 +11,7 @@ import org.jmqtt.store.FlowMessageStore;
 public class DefaultFlowMessageStore implements FlowMessageStore {
 
     private Map<String, ConcurrentHashMap<Integer, Message>> recCache = new ConcurrentHashMap<>();
+    /** 已发送消息的缓存 */
     private Map<String, ConcurrentHashMap<Integer, Message>> sendCache = new ConcurrentHashMap<>();
 
     @Override
@@ -57,9 +58,8 @@ public class DefaultFlowMessageStore implements FlowMessageStore {
 
     @Override
     public Collection<Message> getAllSendMsg(String clientId) {
-        if(sendCache.containsKey(clientId)){
+        if (sendCache.containsKey(clientId)) {
             return sendCache.get(clientId).values();
-
         }
         return new ArrayList<>();
     }

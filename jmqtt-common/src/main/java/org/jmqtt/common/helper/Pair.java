@@ -1,7 +1,9 @@
 package org.jmqtt.common.helper;
 
 public class Pair<T, K> {
+	/** 例如RequestProcessor */
     private T object1;
+    /** 例如RequestProcessor */
     private K object2;
 
     public Pair(T object1, K object2) {

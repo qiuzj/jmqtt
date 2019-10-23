@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ClientSession {
 	/** 客户端标识 */
     private String clientId;
-    /***/
+    /** 清理会话（Clean Session，第1位） */
     private boolean cleanSession;
     /** 处理客户端连接ChannelHandler对应的ChannelHandlerContext，内部维护了对应的客户端连接Channel、ChannelHandler和Pipeline */
     private transient ChannelHandlerContext ctx;

@@ -197,11 +197,13 @@ public class NettyRemotingServer implements RemotingServer {
                 Runnable runnable = new Runnable() {
                     @Override
                     public void run() {
+                    	// 使用报文类型对应的RequestProcessor处理消息
                         processorTable.get(messageType).getObject1().processRequest(ctx, mqttMessage);
                     }
                 };
                 
                 try {
+                	// 使用报文类型对应的线程池执行处理逻辑（RequestProcessor.processRequest）
                     processorTable.get(messageType).getObject2().submit(runnable);
                 } catch (RejectedExecutionException ex) {
                     log.warn("Reject mqtt request,cause={}", ex.getMessage());

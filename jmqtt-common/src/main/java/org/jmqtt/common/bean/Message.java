@@ -14,7 +14,7 @@ public class Message {
     private Map<String, Object> headers;
     /** 客户端标识 */
     private String clientId;
-    /** 报文类型 */
+    /** 报文类型. 使用保留值15：WILL(15) */
     private Type type;
     /** 有效负载 */
     private byte[] payload;

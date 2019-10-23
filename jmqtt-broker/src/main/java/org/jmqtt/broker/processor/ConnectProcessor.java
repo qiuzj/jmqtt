@@ -77,29 +77,38 @@ public class ConnectProcessor implements RequestProcessor {
                 }
                 
                 Object lastState = sessionStore.getLastSession(clientId);
+                // 如果客户端在线，则关闭连接、清理会话
                 if (Objects.nonNull(lastState) && lastState.equals(true)) {
-                    //TODO cluster clear and disconnect previous connect
+                    // TODO cluster clear and disconnect previous connect
                     ClientSession previousClient = ConnectManager.getInstance().getClient(clientId);
                     if (previousClient != null) {
+                    	// 关闭客户端clientId之前的连接
                         previousClient.getCtx().close();
+                        // 清理会话缓存
                         ConnectManager.getInstance().removeClient(clientId);
                     }
                 }
                 
+                // 如果清理会话，则新建会话，同时要清理存储
                 if (cleansession) {
                     clientSession = createNewClientSession(clientId, ctx);
                     sessionPresent = false;
+                // 如果不清理会话
                 } else {
+                	// 有存储会话状态，则重新加载
                     if (Objects.nonNull(lastState)) {
                         clientSession = reloadClientSession(ctx, clientId);
                         sessionPresent = true;
-                    } else {
+                    } else { // 没有会话状态，则新建会话，不需要清理存储
                         clientSession = new ClientSession(clientId, false, ctx);
                         sessionPresent = false;
                     }
                 }
+                // 客户端在线
                 sessionStore.setSession(clientId, true);
+                
                 boolean willFlag = connectMessage.variableHeader().isWillFlag();
+                // 存储遗嘱消息
                 if (willFlag) {
                     boolean willRetain = connectMessage.variableHeader().isWillRetain();
                     int willQos = connectMessage.variableHeader().willQos();
@@ -108,9 +117,13 @@ public class ConnectProcessor implements RequestProcessor {
                     storeWillMsg(clientId, willRetain, willQos, willTopic, willPayload);
                 }
                 returnCode = MqttConnectReturnCode.CONNECTION_ACCEPTED;
+                // 将连接Channel与客户端标识进行关联，保存到本地缓存
                 NettyUtil.setClientId(ctx.channel(), clientId);
+                // 客户端会话缓存，保存到本地缓存
                 ConnectManager.getInstance().putClient(clientId, clientSession);
             }
+            
+            // CONNACK – 确认连接请求
             MqttConnAckMessage ackMessage = MessageUtil.getConnectAckMessage(returnCode, sessionPresent);
             ctx.writeAndFlush(ackMessage);
             log.info("[CONNECT] -> {} connect to this mqtt server", clientId);
@@ -123,18 +136,36 @@ public class ConnectProcessor implements RequestProcessor {
         }
     }
 
-    private boolean keepAlive(String clientId,ChannelHandlerContext ctx,int heatbeatSec){
+    /**
+     * 更新keepAlive时间
+     *  
+     * @param clientId
+     * @param ctx
+     * @param heatbeatSec
+     * @return
+     */
+    private boolean keepAlive(String clientId, ChannelHandlerContext ctx, int heatbeatSec) {
         if (this.connectPermission.verfyHeartbeatTime(clientId, heatbeatSec)) {
             int keepAlive = (int) (heatbeatSec * 1.5f);
             if (ctx.pipeline().names().contains("idleStateHandler")) {
                 ctx.pipeline().remove("idleStateHandler");
             }
+            // 使用新的超时时间
             ctx.pipeline().addFirst("idleStateHandler", new IdleStateHandler(keepAlive, 0, 0));
             return true;
         }
         return false;
     }
 
+    /**
+     * 存储遗嘱消息
+     *  
+     * @param clientId
+     * @param willRetain
+     * @param willQos
+     * @param willTopic
+     * @param willPayload
+     */
     private void storeWillMsg(String clientId, boolean willRetain, int willQos, String willTopic, byte[] willPayload){
         Map<String,Object> headers = new HashMap<>();
         headers.put(MessageHeader.RETAIN, willRetain);
@@ -147,6 +178,13 @@ public class ConnectProcessor implements RequestProcessor {
         log.info("[WillMessageStore] : {} store will message:{}", clientId, message);
     }
 
+    /**
+     * 创建新的会话. 清理掉存储中的离线消息、订阅信息、发送中的消息等
+     *  
+     * @param clientId
+     * @param ctx
+     * @return
+     */
     private ClientSession createNewClientSession(String clientId, ChannelHandlerContext ctx){
         ClientSession clientSession = new ClientSession(clientId, true);
         clientSession.setCtx(ctx);
@@ -176,18 +214,45 @@ public class ConnectProcessor implements RequestProcessor {
         this.reSendMessageService.wakeUp();
     }
 
+    /**
+     * 账号和密码验证
+     *  
+     * @param clientId
+     * @param username
+     * @param password
+     * @return
+     */
     private boolean authentication(String clientId, String username, byte[] password) {
         return this.connectPermission.authentication(clientId, username, password);
     }
 
+    /**
+     * 黑名单检查
+     *  
+     * @param remoteAddr
+     * @param clientId
+     * @return
+     */
     private boolean onBlackList(String remoteAddr, String clientId) {
         return this.connectPermission.onBlacklist(remoteAddr, clientId);
     }
 
+    /**
+     * 验证客户端标识
+     *  
+     * @param clientId
+     * @return
+     */
     private boolean clientIdVerfy(String clientId) {
         return this.connectPermission.clientIdVerfy(clientId);
     }
 
+    /**
+     * 验证协议版本
+     *  
+     * @param mqttVersion
+     * @return
+     */
     private boolean versionValid(int mqttVersion) {
         if (mqttVersion == 3 || mqttVersion == 4) {
             return true;

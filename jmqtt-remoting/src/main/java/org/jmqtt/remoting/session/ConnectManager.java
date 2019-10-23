@@ -9,8 +9,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @version
  */
 public class ConnectManager {
-
-    private  Map<String, ClientSession> clientCache = new ConcurrentHashMap<>();
+	/** 客户端会话缓存. 格式：<客户端标识, ClientSession> */
+    private Map<String, ClientSession> clientCache = new ConcurrentHashMap<>();
 
     private static final ConnectManager INSTANCE = new ConnectManager();
 

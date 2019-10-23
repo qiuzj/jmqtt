@@ -13,7 +13,7 @@ public interface SessionStore {
     /**
      * 设置session状态
      */
-    Object setSession(String clientId,Object obj);
+    Object setSession(String clientId, Object obj);
 
     /**
      * 获取上次的会话信息,cleansession=false时，需要重新加载

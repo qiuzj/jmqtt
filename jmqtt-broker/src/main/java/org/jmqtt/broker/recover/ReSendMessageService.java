@@ -26,6 +26,7 @@ public class ReSendMessageService {
 
     private Thread thread;
     private boolean stoped = false;
+    /** 待发送消息的clientId队列 */
     private BlockingQueue<String> clients = new LinkedBlockingQueue<>();
     private OfflineMessageStore offlineMessageStore;
     private FlowMessageStore flowMessageStore;
@@ -42,18 +43,22 @@ public class ReSendMessageService {
         this.offlineMessageStore = offlineMessageStore;
         this.flowMessageStore = flowMessageStore;
         this.thread = new Thread(new PutClient());
-    };
+    }
 
-    public boolean put(String clientId){
-        if(this.clients.size() > maxSize){
-            log.warn("ReSend message busy! the client queue size is over {}",maxSize);
+    public boolean put(String clientId) {
+        if (this.clients.size() > maxSize) {
+            log.warn("ReSend message busy! the client queue size is over {}", maxSize);
             return false;
         }
         this.clients.offer(clientId);
         return true;
     }
 
-    public void wakeUp(){
+    /**
+     * 唤醒重发消息线程
+     *  
+     */
+    public void wakeUp() {
         LockSupport.unpark(thread);
     }
 
@@ -67,19 +72,19 @@ public class ReSendMessageService {
         }
     }
 
-    public boolean dispatcherMessage(String clientId,Message message){
+    public boolean dispatcherMessage(String clientId, Message message) {
         ClientSession clientSession = ConnectManager.getInstance().getClient(clientId);
         // client off line again
-        if(clientSession == null){
-            log.warn("The client offline again, put the message to the offline queue,clientId:{}",clientId);
+        if (clientSession == null) {
+            log.warn("The client offline again, put the message to the offline queue,clientId:{}", clientId);
             return false;
         }
         int qos = (int) message.getHeader(MessageHeader.QOS);
         int messageId = message.getMsgId();
-        if(qos > 0){
-            flowMessageStore.cacheSendMsg(clientId,message);
+        if (qos > 0) {
+            flowMessageStore.cacheSendMsg(clientId, message);
         }
-        MqttPublishMessage publishMessage = MessageUtil.getPubMessage(message,false,qos,messageId);
+        MqttPublishMessage publishMessage = MessageUtil.getPubMessage(message, false, qos, messageId);
         clientSession.getCtx().writeAndFlush(publishMessage);
         return true;
     }
@@ -87,22 +92,22 @@ public class ReSendMessageService {
     class ResendMessageTask implements Callable<Boolean> {
 
         private String clientId;
-        public ResendMessageTask(String clientId){
+        public ResendMessageTask(String clientId) {
             this.clientId = clientId;
         }
 
         @Override
         public Boolean call() {
             Collection<Message> flowMsgs = flowMessageStore.getAllSendMsg(clientId);
-            for(Message message : flowMsgs){
-                if(!dispatcherMessage(clientId,message)){
+            for (Message message : flowMsgs) {
+                if (!dispatcherMessage(clientId, message)) {
                     return false;
                 }
             }
-            if(offlineMessageStore.containOfflineMsg(clientId)){
+            if (offlineMessageStore.containOfflineMsg(clientId)) {
                 Collection<Message> messages = offlineMessageStore.getAllOfflineMessage(clientId);
-                for(Message message : messages){
-                    if(!dispatcherMessage(clientId,message)){
+                for (Message message : messages) {
+                    if (!dispatcherMessage(clientId, message)) {
                         return false;
                     }
                 }
@@ -123,7 +128,7 @@ public class ReSendMessageService {
                 ResendMessageTask resendMessageTask = new ResendMessageTask(clientId);
                 long start = System.currentTimeMillis();
                 try {
-                    boolean rs = sendMessageExecutor.submit(resendMessageTask).get(2000,TimeUnit.MILLISECONDS);
+                    boolean rs = sendMessageExecutor.submit(resendMessageTask).get(2000, TimeUnit.MILLISECONDS);
                     if (!rs) {
                         log.warn("ReSend message is interrupted,the client offline again,clientId={}", clientId);
                     }
