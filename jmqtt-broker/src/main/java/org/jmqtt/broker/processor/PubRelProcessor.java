@@ -17,6 +17,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 
+/**
+ * 消息接收方处理PUBREL报文（ 发布释放，QoS 2，第二步）
+ *  
+ * @version
+ */
 public class PubRelProcessor extends AbstractMessageProcessor implements RequestProcessor {
 
     private static final Logger log = LoggerFactory.getLogger(LoggerName.MESSAGE_TRACE);
@@ -32,17 +37,19 @@ public class PubRelProcessor extends AbstractMessageProcessor implements Request
     public void processRequest(ChannelHandlerContext ctx, MqttMessage mqttMessage) {
         String clientId = NettyUtil.getClientId(ctx.channel());
         int messageId = MessageUtil.getMessageId(mqttMessage);
-        if(ConnectManager.getInstance().containClient(clientId)){
-            Message message = flowMessageStore.releaseRecMsg(clientId,messageId);
-            if(Objects.nonNull(message)){
+        
+        if (ConnectManager.getInstance().containClient(clientId)) {
+            Message message = flowMessageStore.releaseRecMsg(clientId, messageId);
+            // 收到发送端的PUBREC报文，再开始发送消息. 假设没收到，那要么消息一直存储要么丢弃...坑爹了？
+            if (Objects.nonNull(message)) {
                 super.processMessage(message);
-            }else{
-                log.warn("[PubRelMessage] -> the message is not exist,clientId={},messageId={}.",clientId,messageId);
+            } else {
+                log.warn("[PubRelMessage] -> the message is not exist,clientId={},messageId={}.", clientId, messageId);
             }
             MqttMessage pubComMessage = MessageUtil.getPubComMessage(messageId);
             ctx.writeAndFlush(pubComMessage);
-        }else{
-            log.warn("[PubRelMessage] -> the client：{} disconnect to this server.",clientId);
+        } else {
+            log.warn("[PubRelMessage] -> the client：{} disconnect to this server.", clientId);
             RemotingHelper.closeChannel(ctx.channel());
         }
     }

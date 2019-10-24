@@ -27,19 +27,25 @@ import io.netty.handler.codec.mqtt.MqttUnsubAckMessage;
  */
 public class MessageUtil {
 
-    public static byte[] readBytesFromByteBuf(ByteBuf byteBuf){
+	/**
+	 * 从Netty的ByteBuf中读取字节码内容byte[]
+	 *  
+	 * @param byteBuf
+	 * @return
+	 */
+    public static byte[] readBytesFromByteBuf(ByteBuf byteBuf) {
         byte[] bytes = new byte[byteBuf.readableBytes()];
         byteBuf.readBytes(bytes);
         return bytes;
     }
 
-    public static MqttUnsubAckMessage getUnSubAckMessage(int messageId){
-        MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.UNSUBACK,false,MqttQoS.AT_MOST_ONCE,false,0);
+    public static MqttUnsubAckMessage getUnSubAckMessage(int messageId) {
+        MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.UNSUBACK, false, MqttQoS.AT_MOST_ONCE, false, 0);
         MqttMessageIdVariableHeader idVariableHeader = MqttMessageIdVariableHeader.from(messageId);
-        return new MqttUnsubAckMessage(fixedHeader,idVariableHeader);
+        return new MqttUnsubAckMessage(fixedHeader, idVariableHeader);
     }
 
-    public static int getMessageId(MqttMessage mqttMessage){
+    public static int getMessageId(MqttMessage mqttMessage) {
         MqttMessageIdVariableHeader idVariableHeader = (MqttMessageIdVariableHeader) mqttMessage.variableHeader();
         return idVariableHeader.messageId();
     }
@@ -58,14 +64,14 @@ public class MessageUtil {
         return qos2;
     }
 
-    public static MqttMessage getPubRelMessage(int messageId){
-        MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBREL,false,MqttQoS.AT_MOST_ONCE,false,0);
+    public static MqttMessage getPubRelMessage(int messageId) {
+        MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBREL, false, MqttQoS.AT_MOST_ONCE, false, 0);
         MqttMessageIdVariableHeader idVariableHeader = MqttMessageIdVariableHeader.from(messageId);
-        return new MqttMessage(fixedHeader,idVariableHeader);
+        return new MqttMessage(fixedHeader, idVariableHeader);
     }
 
     /**
-     * 构造MQTT协议的"发布消息"报文对象
+     * 构造MQTT协议的Netty "发布消息"报文对象
      *  
      * @param message
      * @param dup
@@ -85,35 +91,35 @@ public class MessageUtil {
         return new MqttPublishMessage(fixedHeader, publishVariableHeader, heapBuf);
     }
 
-    public static MqttMessage getSubAckMessage(int messageId, List<Integer> qos){
-        MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.SUBACK,false,MqttQoS.AT_MOST_ONCE,false,0);
+    public static MqttMessage getSubAckMessage(int messageId, List<Integer> qos) {
+        MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.SUBACK, false, MqttQoS.AT_MOST_ONCE, false, 0);
         MqttMessageIdVariableHeader idVariableHeader = MqttMessageIdVariableHeader.from(messageId);
         MqttSubAckPayload subAckPayload = new MqttSubAckPayload(qos);
-        return new MqttSubAckMessage(fixedHeader,idVariableHeader,subAckPayload);
+        return new MqttSubAckMessage(fixedHeader, idVariableHeader, subAckPayload);
     }
 
-    public static MqttMessage getPingRespMessage(){
-        MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PINGRESP,false,MqttQoS.AT_MOST_ONCE,false,0);
+    public static MqttMessage getPingRespMessage() {
+        MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PINGRESP, false, MqttQoS.AT_MOST_ONCE, false, 0);
         MqttMessage mqttMessage = new MqttMessage(fixedHeader);
         return mqttMessage;
     }
 
-    public static MqttMessage getPubComMessage(int messageId){
-        MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBCOMP,false,MqttQoS.AT_MOST_ONCE,false,0);
+    public static MqttMessage getPubComMessage(int messageId) {
+        MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBCOMP, false, MqttQoS.AT_MOST_ONCE, false, 0);
         MqttMessage mqttMessage = new MqttMessage(fixedHeader,MqttMessageIdVariableHeader.from(messageId));
         return mqttMessage;
     }
 
-    public static MqttMessage getPubRecMessage(int messageId){
-        MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBREC,false,MqttQoS.AT_MOST_ONCE,false,0);
-        MqttMessage mqttMessage = new MqttMessage(fixedHeader,MqttMessageIdVariableHeader.from(messageId));
+    public static MqttMessage getPubRecMessage(int messageId) {
+        MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBREC, false, MqttQoS.AT_MOST_ONCE, false, 0);
+        MqttMessage mqttMessage = new MqttMessage(fixedHeader, MqttMessageIdVariableHeader.from(messageId));
         return mqttMessage;
     }
 
-    public static MqttPubAckMessage getPubAckMessage(int messageId){
-        MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBACK,false,MqttQoS.AT_MOST_ONCE,false,0);
+    public static MqttPubAckMessage getPubAckMessage(int messageId) {
+        MqttFixedHeader fixedHeader = new MqttFixedHeader(MqttMessageType.PUBACK, false, MqttQoS.AT_MOST_ONCE, false, 0);
         MqttMessageIdVariableHeader idVariableHeader = MqttMessageIdVariableHeader.from(messageId);
-        return new MqttPubAckMessage(fixedHeader,idVariableHeader);
+        return new MqttPubAckMessage(fixedHeader, idVariableHeader);
     }
 
     public static MqttConnAckMessage getConnectAckMessage(MqttConnectReturnCode returnCode, boolean sessionPresent) {

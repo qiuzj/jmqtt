@@ -8,11 +8,11 @@ import java.util.Objects;
  * inner message transfer from MqttMessage
  */
 public class Message {
-	/** 消息ID */
+	/** 消息ID. 发送前生成，如调用ClientSession.generateMessageId() */
     private int msgId;
     /** 消息头. see MessageHeader */
     private Map<String, Object> headers;
-    /** 客户端标识 */
+    /** 发送端的客户端标识 */
     private String clientId;
     /** 报文类型. 使用保留值15：WILL(15) */
     private Type type;
@@ -100,7 +100,7 @@ public class Message {
         PINGREQ(12),
         PINGRESP(13),
         DISCONNECT(14),
-        WILL(15);
+        WILL(15); // 相比MqttMessageType多了一个WILL(15)，但15在协议当中是保留字段
 
         private int value;
 

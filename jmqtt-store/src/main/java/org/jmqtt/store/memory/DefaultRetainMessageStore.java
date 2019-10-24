@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultRetainMessageStore implements RetainMessageStore {
 
-    private Map<String/*Topic*/,Message> retainTable = new ConcurrentHashMap<>();
+    private Map<String/*Topic*/, Message> retainTable = new ConcurrentHashMap<>();
 
     @Override
     public Collection<Message> getAllRetainMessage() {
@@ -18,7 +18,7 @@ public class DefaultRetainMessageStore implements RetainMessageStore {
 
     @Override
     public void storeRetainMessage(String topic, Message message) {
-        this.retainTable.put(topic,message);
+        this.retainTable.put(topic, message);
     }
 
     @Override

@@ -22,7 +22,12 @@ public interface OfflineMessageStore {
      */
     boolean addOfflineMessage(String clientId, Message message);
 
+    /**
+     * 获取客户端的所有离线消息
+     *  
+     * @param clientId
+     * @return
+     */
     Collection<Message> getAllOfflineMessage(String clientId);
-
 
 }

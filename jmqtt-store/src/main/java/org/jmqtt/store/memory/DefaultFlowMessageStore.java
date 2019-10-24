@@ -9,9 +9,9 @@ import org.jmqtt.common.bean.Message;
 import org.jmqtt.store.FlowMessageStore;
 
 public class DefaultFlowMessageStore implements FlowMessageStore {
-
+	/** 缓存发布消息为QoS2的消息. */
     private Map<String, ConcurrentHashMap<Integer, Message>> recCache = new ConcurrentHashMap<>();
-    /** 已发送消息的缓存 */
+    /** 已发送消息的缓存. 发布消息为QoS>0时使用，收到PUBACK时使用 */
     private Map<String, ConcurrentHashMap<Integer, Message>> sendCache = new ConcurrentHashMap<>();
 
     @Override
@@ -27,14 +27,14 @@ public class DefaultFlowMessageStore implements FlowMessageStore {
 
     @Override
     public boolean cacheRecMsg(String clientId, Message message) {
-        if(!recCache.containsKey(clientId)){
-            synchronized (recCache){
-                if(!recCache.containsKey(clientId)){
-                    recCache.put(clientId,new ConcurrentHashMap<Integer,Message>());
+        if (!recCache.containsKey(clientId)) {
+            synchronized (recCache) {
+                if (!recCache.containsKey(clientId)) {
+                    recCache.put(clientId, new ConcurrentHashMap<Integer, Message>());
                 }
             }
         }
-        this.recCache.get(clientId).put(message.getMsgId(),message);
+        this.recCache.get(clientId).put(message.getMsgId(), message);
         return true;
     }
 

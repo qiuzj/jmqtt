@@ -12,7 +12,6 @@ public class NettyUtil {
     /**
      * 将连接Channel与客户端标识进行关联
      *  
-     * @author sam.qiu  
      * @param channel
      * @param clientId
      */
@@ -23,7 +22,6 @@ public class NettyUtil {
     /**
      * 通过连接Channel获取关联的客户端标识
      *  
-     * @author sam.qiu  
      * @param channel
      * @return
      */

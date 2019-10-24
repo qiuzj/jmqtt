@@ -120,23 +120,29 @@ public class DefaultDispatcherMessage implements MessageDispatcher {
                 try {
                 	// 循环将本批消息逐条发送到相关订阅者
                     for (Message message : messages) {
+                    	// 根据topic找到所有订阅记录
                         Set<Subscription> subscriptions = subscriptionMatcher.match((String) message.getHeader(MessageHeader.TOPIC));
+                        // 循环将当前消息发送给每个订阅者
                         for (Subscription subscription : subscriptions) {
                             String clientId = subscription.getClientId();
+                            // 订阅者的客户端会话
                             ClientSession clientSession = ConnectManager.getInstance().getClient(subscription.getClientId());
                             // 客户端在线则立刻发送
                             if (ConnectManager.getInstance().containClient(clientId)) {
-                            	// 比较并返回最小的QoS
+                            	// 获取最小的QoS=min(消息携带的QoS, 订阅记录的QoS)
                                 int qos = MessageUtil.getMinQos((int) message.getHeader(MessageHeader.QOS), subscription.getQos());
                                 int messageId = clientSession.generateMessageId();
+                                // 更新消息的QoS
                                 message.putHeader(MessageHeader.QOS, qos);
                                 message.setMsgId(messageId);
-                                // 缓存消息
+                                // QoS大于0时，缓存已发送的消息
                                 if (qos > 0) {
                                     flowMessageStore.cacheSendMsg(clientId, message);
                                 }
                                 MqttPublishMessage publishMessage = MessageUtil.getPubMessage(message, false, qos, messageId);
+                                // 将"发布消息"发送给订阅者
                                 clientSession.getCtx().writeAndFlush(publishMessage);
+                                
                             // 客户端不在线则暂存到离线存储
                             } else {
                                 offlineMessageStore.addOfflineMessage(clientId, message);

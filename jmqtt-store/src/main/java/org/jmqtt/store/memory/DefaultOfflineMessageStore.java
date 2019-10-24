@@ -16,8 +16,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DefaultOfflineMessageStore implements OfflineMessageStore {
 
     private static final Logger log = LoggerFactory.getLogger(LoggerName.STORE);
-
-    private Map<String,BlockingQueue<Message>> offlineTable = new ConcurrentHashMap<>();
+    /** 离线消息存储 */
+    private Map<String/*clientId*/, BlockingQueue<Message>> offlineTable = new ConcurrentHashMap<>();
+    /** 每个客户端缓存的最大消息数量 */
     private int msgMaxNum = 1000;
 
     public DefaultOfflineMessageStore(){
@@ -44,7 +45,7 @@ public class DefaultOfflineMessageStore implements OfflineMessageStore {
             }
         }
         BlockingQueue<Message> queue = this.offlineTable.get(clientId);
-        // 离线消息太多则丢弃掉超出部分
+        // 离线消息太多则丢弃掉超出部分，先进先扔（FIFO）
         while (queue.size() > msgMaxNum) {
             try {
                 queue.take();
@@ -53,6 +54,7 @@ public class DefaultOfflineMessageStore implements OfflineMessageStore {
             }
         }
         queue.offer(message);
+        
         return true;
     }
 
@@ -60,7 +62,7 @@ public class DefaultOfflineMessageStore implements OfflineMessageStore {
     public Collection<Message> getAllOfflineMessage(String clientId) {
         BlockingQueue<Message> queue = offlineTable.get(clientId);
         Collection<Message> allMessages = new ArrayList<>();
-        int rs = queue.drainTo(allMessages);
+        int rs = queue.drainTo(allMessages); // 该方法比反复poll更高效
         return allMessages;
     }
 }

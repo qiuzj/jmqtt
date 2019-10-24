@@ -30,69 +30,79 @@ public class PublishProcessor extends AbstractMessageProcessor implements Reques
 
     private PubSubPermission pubSubPermission;
 
-    public PublishProcessor(BrokerController controller){
-        super(controller.getMessageDispatcher(),controller.getRetainMessageStore());
+    public PublishProcessor(BrokerController controller) {
+        super(controller.getMessageDispatcher(), controller.getRetainMessageStore());
         this.flowMessageStore = controller.getFlowMessageStore();
         this.pubSubPermission = controller.getPubSubPermission();
     }
 
     @Override
     public void processRequest(ChannelHandlerContext ctx, MqttMessage mqttMessage) {
-        try{
+        try {
             MqttPublishMessage publishMessage = (MqttPublishMessage) mqttMessage;
             MqttQoS qos = publishMessage.fixedHeader().qosLevel();
+            // 内部消息对象，用于内部传输、存储等，对外发送的时候需要转化为MqttMessage
             Message innerMsg = new Message();
             String clientId = NettyUtil.getClientId(ctx.channel());
             ClientSession clientSession = ConnectManager.getInstance().getClient(clientId);
             String topic = publishMessage.variableHeader().topicName();
-            if(!this.pubSubPermission.publishVerfy(clientId,topic)){
+            
+            // 客户端是否有权限发布消息到指定topic
+            if (!this.pubSubPermission.publishVerfy(clientId, topic)) {
                 log.warn("[PubMessage] permission is not allowed");
-                clientSession.getCtx().close();
+                clientSession.getCtx().close(); // 直接关闭连接
                 return;
             }
+            
             innerMsg.setPayload(MessageUtil.readBytesFromByteBuf(((MqttPublishMessage) mqttMessage).payload()));
             innerMsg.setClientId(clientId);
             innerMsg.setType(Message.Type.valueOf(mqttMessage.fixedHeader().messageType().value()));
+            
             Map<String,Object> headers = new HashMap<>();
-            headers.put(MessageHeader.TOPIC,publishMessage.variableHeader().topicName());
-            headers.put(MessageHeader.QOS,publishMessage.fixedHeader().qosLevel().value());
-            headers.put(MessageHeader.RETAIN,publishMessage.fixedHeader().isRetain());
-            headers.put(MessageHeader.DUP,publishMessage.fixedHeader().isDup());
+            headers.put(MessageHeader.TOPIC, publishMessage.variableHeader().topicName());
+            headers.put(MessageHeader.QOS, publishMessage.fixedHeader().qosLevel().value());
+            headers.put(MessageHeader.RETAIN, publishMessage.fixedHeader().isRetain());
+            headers.put(MessageHeader.DUP, publishMessage.fixedHeader().isDup());
             innerMsg.setHeaders(headers);
             innerMsg.setMsgId(publishMessage.variableHeader().packetId());
-            switch (qos){
+            
+            switch (qos) {
+                // 直接发送消息，但不响应发送端
                 case AT_MOST_ONCE:
                     processMessage(innerMsg);
                     break;
+                // 直接发送消息，然后回复PUBACK报文给发送端
                 case AT_LEAST_ONCE:
-                    processQos1(ctx,innerMsg);
+                    processQos1(ctx, innerMsg);
                     break;
+                // 不直接发送消息，而是缓存到PUBREC存储，然后回复PUBREC报文给发送端
                 case EXACTLY_ONCE:
-                    processQos2(ctx,innerMsg);
+                    processQos2(ctx, innerMsg);
                     break;
                 default:
                     log.warn("[PubMessage] -> Wrong mqtt message,clientId={}", clientId);
             }
-        }catch (Throwable tr){
-            log.warn("[PubMessage] -> Solve mqtt pub message exception:{}",tr);
-        }finally {
-            ReferenceCountUtil.release(mqttMessage.payload());
+        } catch (Throwable tr) {
+            log.warn("[PubMessage] -> Solve mqtt pub message exception:{}", tr);
+        } finally {
+            ReferenceCountUtil.release(mqttMessage.payload()); // here
         }
     }
 
-    private void processQos2(ChannelHandlerContext ctx,Message innerMsg){
-        log.debug("[PubMessage] -> Process qos2 message,clientId={}",innerMsg.getClientId());
-        boolean flag = flowMessageStore.cacheRecMsg(innerMsg.getClientId(),innerMsg);
-        if(!flag){
-            log.warn("[PubMessage] -> cache qos2 pub message failure,clientId={}",innerMsg.getClientId());
+    private void processQos2(ChannelHandlerContext ctx, Message innerMsg) {
+        log.debug("[PubMessage] -> Process qos2 message,clientId={}", innerMsg.getClientId());
+        boolean flag = flowMessageStore.cacheRecMsg(innerMsg.getClientId(), innerMsg);
+        if (!flag) {
+            log.warn("[PubMessage] -> cache qos2 pub message failure,clientId={}", innerMsg.getClientId());
         }
         MqttMessage pubRecMessage = MessageUtil.getPubRecMessage(innerMsg.getMsgId());
         ctx.writeAndFlush(pubRecMessage);
     }
 
-    private void processQos1(ChannelHandlerContext ctx,Message innerMsg){
+    private void processQos1(ChannelHandlerContext ctx, Message innerMsg){
         processMessage(innerMsg);
-        log.debug("[PubMessage] -> Process qos1 message,clientId={}",innerMsg.getClientId());
+        log.debug("[PubMessage] -> Process qos1 message,clientId={}", innerMsg.getClientId());
+        // PUBACK报文是对QoS	1等级的PUBLISH报文的响应
         MqttPubAckMessage pubAckMessage = MessageUtil.getPubAckMessage(innerMsg.getMsgId());
         ctx.writeAndFlush(pubAckMessage);
     }

@@ -58,13 +58,14 @@ public class ClientSession {
     }
 
     /**
-     * 生成消息ID
+     * 生成消息ID. 2个字节
      *  
      * @return
      */
-    public int generateMessageId(){
+    public int generateMessageId() {
         int messageId = messageIdCounter.getAndIncrement();
-        messageId = Math.abs(messageId % 0xFFFF);
+        messageId = Math.abs(messageId % 0xFFFF); // 最大2个字节
+        // 消息ID不为0
         if (messageId == 0) {
             return generateMessageId();
         }

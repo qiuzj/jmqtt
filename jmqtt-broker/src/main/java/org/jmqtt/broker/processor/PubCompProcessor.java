@@ -23,10 +23,11 @@ public class PubCompProcessor implements RequestProcessor {
     public void processRequest(ChannelHandlerContext ctx, MqttMessage mqttMessage) {
         String clientId = NettyUtil.getClientId(ctx.channel());
         int messageId = MessageUtil.getMessageId(mqttMessage);
-        boolean isContain = flowMessageStore.releaseSendMsg(clientId,messageId);
-        log.debug("[PubComp] -> Recieve PubCom and remove the flow message,clientId={},msgId={}",clientId,messageId);
-        if(!isContain){
-            log.warn("[PubComp] -> The message is not in Flow cache,clientId={},msgId={}",clientId,messageId);
+        
+        boolean isContain = flowMessageStore.releaseSendMsg(clientId, messageId);
+        log.debug("[PubComp] -> Recieve PubCom and remove the flow message,clientId={},msgId={}", clientId, messageId);
+        if (!isContain) {
+            log.warn("[PubComp] -> The message is not in Flow cache,clientId={},msgId={}", clientId, messageId);
         }
     }
 }

@@ -26,7 +26,7 @@ public class ReSendMessageService {
 
     private Thread thread;
     private boolean stoped = false;
-    /** 待发送消息的clientId队列 */
+    /** 待发送消息的clientId队列，说明该客户端有消息要发送 */
     private BlockingQueue<String> clients = new LinkedBlockingQueue<>();
     private OfflineMessageStore offlineMessageStore;
     private FlowMessageStore flowMessageStore;
@@ -37,7 +37,6 @@ public class ReSendMessageService {
             TimeUnit.SECONDS,
             new LinkedBlockingQueue<>(10000),
             new ThreadFactoryImpl("ReSendMessageThread"));
-
 
     public ReSendMessageService(OfflineMessageStore offlineMessageStore, FlowMessageStore flowMessageStore){
         this.offlineMessageStore = offlineMessageStore;
@@ -117,7 +116,7 @@ public class ReSendMessageService {
         }
     }
 
-    class PutClient implements Runnable{
+    class PutClient implements Runnable {
         @Override
         public void run() {
             while (!stoped) {
