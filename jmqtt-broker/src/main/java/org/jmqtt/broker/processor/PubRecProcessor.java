@@ -12,6 +12,12 @@ import org.jmqtt.remoting.util.NettyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * PUBREC报文处理器.
+ * PUBREC报文是对QoS等级2的PUBLISH报文的响应.
+ *  
+ * @version
+ */
 public class PubRecProcessor implements RequestProcessor {
 
     private Logger log = LoggerFactory.getLogger(LoggerName.MESSAGE_TRACE);

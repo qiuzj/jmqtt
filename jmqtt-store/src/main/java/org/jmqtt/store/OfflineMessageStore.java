@@ -9,6 +9,11 @@ import java.util.Collection;
  */
 public interface OfflineMessageStore {
 
+	/**
+	 * 清理客户端的所有离线缓存
+	 *  
+	 * @param clientId
+	 */
     void clearOfflineMsgCache(String clientId);
 
     boolean containOfflineMsg(String clientId);

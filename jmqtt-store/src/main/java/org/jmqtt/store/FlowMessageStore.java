@@ -33,6 +33,12 @@ public interface FlowMessageStore {
 
     /**
      * 缓存已发送的消息
+     * <pre>
+     * 调用来源
+     * 正常发送消息：DefaultDispatcherMessage.AsyncDispatcher.run()
+     * 重新发送消息：ReSendMessageService.dispatcherMessage()
+     * 分发retain消息给新订阅者：SubscribeProcessor.dispatcherRetainMessage()
+     * </pre>
      *  
      * @param clientId
      * @param message
@@ -40,6 +46,16 @@ public interface FlowMessageStore {
      */
     boolean cacheSendMsg(String clientId, Message message);
 
+    /**
+     * 获取所有消息
+     * <pre>
+     * 调用来源
+     * 重发已发送但未确认的消息？ReSendMessageService.ResendMessageTask
+     * </pre>
+     *  
+     * @param clientId
+     * @return
+     */
     Collection<Message> getAllSendMsg(String clientId);
 
     /**

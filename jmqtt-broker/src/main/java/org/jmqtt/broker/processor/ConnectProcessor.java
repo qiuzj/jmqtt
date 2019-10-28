@@ -127,6 +127,7 @@ public class ConnectProcessor implements RequestProcessor {
             MqttConnAckMessage ackMessage = MessageUtil.getConnectAckMessage(returnCode, sessionPresent);
             ctx.writeAndFlush(ackMessage);
             log.info("[CONNECT] -> {} connect to this mqtt server", clientId);
+            
             reConnect2SendMessage(clientId);
         } catch (Exception ex) {
             log.warn("[CONNECT] -> Service Unavailable: cause={}", ex);

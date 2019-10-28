@@ -80,6 +80,7 @@ public class ReSendMessageService {
         }
         int qos = (int) message.getHeader(MessageHeader.QOS);
         int messageId = message.getMsgId();
+        // 如果QoS大于0，则缓存已发送的消息
         if (qos > 0) {
             flowMessageStore.cacheSendMsg(clientId, message);
         }
@@ -103,6 +104,7 @@ public class ReSendMessageService {
                     return false;
                 }
             }
+            // 发送离线消息
             if (offlineMessageStore.containOfflineMsg(clientId)) {
                 Collection<Message> messages = offlineMessageStore.getAllOfflineMessage(clientId);
                 for (Message message : messages) {

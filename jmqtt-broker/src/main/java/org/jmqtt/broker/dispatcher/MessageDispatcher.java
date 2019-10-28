@@ -23,6 +23,11 @@ public interface MessageDispatcher {
 
     /**
      * 将消息添加到发送队列
+     * <pre>
+     * 调用来源
+     * 客户端连接关闭时，发布遗嘱消息：ClientLifeCycleHookService
+     * 接收处理PUBLISH消息：AbstractMessageProcessor
+     * </pre>
      *  
      * @param message
      * @return

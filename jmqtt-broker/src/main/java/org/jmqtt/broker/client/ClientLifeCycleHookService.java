@@ -33,7 +33,8 @@ public class ClientLifeCycleHookService implements ChannelEventListener {
         if (StringUtils.isNotEmpty(clientId)) {
             if (willMessageStore.hasWillMessage(clientId)) {
                 Message willMessage = willMessageStore.getWillMessage(clientId);
-                messageDispatcher.appendMessage(willMessage); // 发布遗嘱消息
+                // 客户端连接关闭时，发布遗嘱消息
+                messageDispatcher.appendMessage(willMessage);
             }
         }
     }

@@ -115,14 +115,14 @@ public class SubscribeProcessor implements RequestProcessor {
     /**
      * 分发retain消息给新订阅者
      */
-    private void dispatcherRetainMessage(ClientSession clientSession,List<Message> messages){
-        for(Message message : messages){
-            message.putHeader(MessageHeader.RETAIN,true);
+    private void dispatcherRetainMessage(ClientSession clientSession, List<Message> messages) {
+        for (Message message : messages) {
+            message.putHeader(MessageHeader.RETAIN, true);
             int qos = (int) message.getHeader(MessageHeader.QOS);
-            if(qos > 0){
-                flowMessageStore.cacheSendMsg(clientSession.getClientId(),message);
+            if (qos > 0) {
+                flowMessageStore.cacheSendMsg(clientSession.getClientId(), message);
             }
-            MqttPublishMessage publishMessage = MessageUtil.getPubMessage(message,false,qos,clientSession.generateMessageId());
+            MqttPublishMessage publishMessage = MessageUtil.getPubMessage(message, false, qos, clientSession.generateMessageId());
             clientSession.getCtx().writeAndFlush(publishMessage);
         }
     }
