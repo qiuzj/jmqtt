@@ -19,9 +19,9 @@ public class NettyConnectHandler extends ChannelDuplexHandler {
 
     private static final Logger log = LoggerFactory.getLogger(LoggerName.REMOTING);
 
-    private NettyEventExcutor eventExcutor;
+    private NettyEventExecutor eventExcutor;
 
-    public NettyConnectHandler(NettyEventExcutor nettyEventExcutor){
+    public NettyConnectHandler(NettyEventExecutor nettyEventExcutor){
         this.eventExcutor = nettyEventExcutor;
     }
 

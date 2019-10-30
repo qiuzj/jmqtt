@@ -2,7 +2,9 @@ package org.jmqtt.common.config;
 
 public class NettyConfig {
 
+	/** boss线程数 */
     private int selectorThreadNum = 3;
+    /** worker线程数 */
     private int ioThreadNum = 8;
     private int tcpBackLog = 1024;
     private boolean tcpNoDelay = false;

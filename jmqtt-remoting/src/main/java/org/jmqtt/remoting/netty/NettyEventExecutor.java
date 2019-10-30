@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
  *  
  * @version
  */
-public class NettyEventExcutor implements Runnable {
+public class NettyEventExecutor implements Runnable {
 
     private static final Logger log = LoggerFactory.getLogger(LoggerName.REMOTING);
     /** 事件队列 */
@@ -23,7 +23,7 @@ public class NettyEventExcutor implements Runnable {
     boolean stoped = false;
     private Thread thread;
 
-    public NettyEventExcutor(ChannelEventListener channelEventListener){
+    public NettyEventExecutor(ChannelEventListener channelEventListener){
         this.listener = channelEventListener;
     }
 

@@ -44,22 +44,23 @@ import io.netty.handler.timeout.IdleStateHandler;
 public class NettyRemotingServer implements RemotingServer {
 
     private static final Logger log = LoggerFactory.getLogger(LoggerName.REMOTING);
+    /** Netty配置信息 */
     private NettyConfig nettyConfig;
     /** bossGroup */
     private EventLoopGroup selectorGroup;
     /** workerGroup */
     private EventLoopGroup ioGroup;
-    /** IO模型Channel实现类 */
+    /** Netty IO模型Channel实现类 */
     private Class<? extends ServerChannel> clazz;
     /** 报文处理器列表 */
     private Map<MqttMessageType, Pair<RequestProcessor, ExecutorService>> processorTable;
     /** Netty事件执行器 */
-    private NettyEventExcutor nettyEventExcutor;
+    private NettyEventExecutor nettyEventExcutor;
 
     public NettyRemotingServer(NettyConfig nettyConfig, ChannelEventListener listener) {
         this.nettyConfig = nettyConfig;
         this.processorTable = new HashMap<>();
-        this.nettyEventExcutor = new NettyEventExcutor(listener);
+        this.nettyEventExcutor = new NettyEventExecutor(listener);
 
         if (!nettyConfig.isUseEpoll()) { // Nio
             selectorGroup = new NioEventLoopGroup(nettyConfig.getSelectorThreadNum(),
