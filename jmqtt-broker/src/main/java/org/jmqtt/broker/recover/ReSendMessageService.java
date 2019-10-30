@@ -18,6 +18,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.locks.LockSupport;
 
 /**
+ * 客户端重新连接上来时，重新发送离线消息和已发送未确认的消息
  * send offline message and flow message when client re connect and cleanSession is false
  */
 public class ReSendMessageService {
@@ -80,7 +81,7 @@ public class ReSendMessageService {
         }
         int qos = (int) message.getHeader(MessageHeader.QOS);
         int messageId = message.getMsgId();
-        // 如果QoS大于0，则缓存已发送的消息
+        // 如果QoS大于0，则缓存已发送的消息。对于之前未确认消息的重发，这里将多缓存了一次，覆盖消息ID相同的消息。可以优化
         if (qos > 0) {
             flowMessageStore.cacheSendMsg(clientId, message);
         }
@@ -89,6 +90,9 @@ public class ReSendMessageService {
         return true;
     }
 
+    /**
+     * 重发消息任务
+     */
     class ResendMessageTask implements Callable<Boolean> {
 
         private String clientId;
@@ -98,10 +102,11 @@ public class ReSendMessageService {
 
         @Override
         public Boolean call() {
+        	/* 重发已发送未确认的消息 */
             Collection<Message> flowMsgs = flowMessageStore.getAllSendMsg(clientId);
             for (Message message : flowMsgs) {
                 if (!dispatcherMessage(clientId, message)) {
-                    return false;
+                    return false; // 如果客户端离线了，则直接返回
                 }
             }
             // 发送离线消息
@@ -109,9 +114,12 @@ public class ReSendMessageService {
                 Collection<Message> messages = offlineMessageStore.getAllOfflineMessage(clientId);
                 for (Message message : messages) {
                     if (!dispatcherMessage(clientId, message)) {
+                    	// 如果客户端离线了，则直接返回。
+                    	// 可能发了一部分离线消息就离线了，这样下次这部分已重发的会再发一遍，由客户端去重。
                         return false;
                     }
                 }
+                // 清理客户端的所有离线缓存
                 offlineMessageStore.clearOfflineMsgCache(clientId);
             }
             return true;

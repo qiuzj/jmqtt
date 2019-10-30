@@ -49,46 +49,68 @@ public class SubscribeProcessor implements RequestProcessor {
         String clientId = NettyUtil.getClientId(ctx.channel());
         int messageId = subscribeMessage.variableHeader().messageId();
         ClientSession clientSession = ConnectManager.getInstance().getClient(clientId);
-        List<Topic> validTopicList =validTopics(clientSession,subscribeMessage.payload().topicSubscriptions());
-        if(validTopicList == null || validTopicList.size() == 0){
-            log.warn("[Subscribe] -> Valid all subscribe topic failure,clientId:{}",clientId);
+        
+        List<Topic> validTopicList = validTopics(clientSession, subscribeMessage.payload().topicSubscriptions());
+        if (validTopicList == null || validTopicList.size() == 0) {
+            log.warn("[Subscribe] -> Valid all subscribe topic failure,clientId:{}", clientId);
             return;
         }
+        
+        /*
+         * 有效载荷包含一个返回码清单。每个返回码对应等待确认的SUBSCRIBE报文中的一个主题过滤器。
+         * 返回码的顺序必须和SUBSCRIBE报文中主题过滤器的顺序相同。
+         */
         List<Integer> ackQos = getTopicQos(validTopicList);
-        MqttMessage subAckMessage = MessageUtil.getSubAckMessage(messageId,ackQos);
+        MqttMessage subAckMessage = MessageUtil.getSubAckMessage(messageId, ackQos);
         ctx.writeAndFlush(subAckMessage);
+        
+        // 保存客户端订阅记录
+        List<Message> retainMessages = subscribe(clientSession, validTopicList);
         // send retain messages
-        List<Message> retainMessages = subscribe(clientSession,validTopicList);
-        dispatcherRetainMessage(clientSession,retainMessages);
+        // 发送保留消息给新订阅者
+        dispatcherRetainMessage(clientSession, retainMessages);
     }
 
+    /**
+     * 按顺序返回所有Topic的QoS集合
+     *  
+     * @param topics
+     * @return
+     */
     private List<Integer> getTopicQos(List<Topic> topics){
         List<Integer> qoss = new ArrayList<>(topics.size());
-        for(Topic topic : topics){
+        for (Topic topic : topics) {
             qoss.add(topic.getQos());
         }
         return qoss;
     }
 
-    private List<Message> subscribe(ClientSession clientSession,List<Topic> validTopicList){
+    /**
+     * 保存客户端订阅信息
+     *  
+     * @param clientSession
+     * @param validTopicList
+     * @return
+     */
+    private List<Message> subscribe(ClientSession clientSession, List<Topic> validTopicList) {
         Collection<Message> retainMessages = null;
         List<Message> needDispatcher = new ArrayList<>();
-        for(Topic topic : validTopicList){
-            Subscription subscription = new Subscription(clientSession.getClientId(),topic.getTopicName(),topic.getQos());
+        for (Topic topic : validTopicList) {
+            Subscription subscription = new Subscription(clientSession.getClientId(), topic.getTopicName(), topic.getQos());
             boolean subRs = this.subscriptionMatcher.subscribe(subscription);
-            if(subRs){
-                if(retainMessages == null){
+            if (subRs) {
+                if (retainMessages == null) {
                     retainMessages = retainMessageStore.getAllRetainMessage();
                 }
-                for(Message retainMsg : retainMessages){
+                for (Message retainMsg : retainMessages) {
                     String pubTopic = (String) retainMsg.getHeader(MessageHeader.TOPIC);
-                    if(subscriptionMatcher.isMatch(pubTopic,subscription.getTopic())){
-                        int minQos = MessageUtil.getMinQos((int)retainMsg.getHeader(MessageHeader.QOS),topic.getQos());
-                        retainMsg.putHeader(MessageHeader.QOS,minQos);
+                    if (subscriptionMatcher.isMatch(pubTopic, subscription.getTopic())) {
+                        int minQos = MessageUtil.getMinQos((int) retainMsg.getHeader(MessageHeader.QOS), topic.getQos());
+                        retainMsg.putHeader(MessageHeader.QOS, minQos);
                         needDispatcher.add(retainMsg);
                     }
                 }
-                this.subscriptionStore.storeSubscription(clientSession.getClientId(),subscription);
+                this.subscriptionStore.storeSubscription(clientSession.getClientId(), subscription);
             }
         }
         retainMessages = null;
@@ -96,17 +118,17 @@ public class SubscribeProcessor implements RequestProcessor {
     }
 
     /**
-     * 返回校验合法的topic
+     * 检查客户端是否有权限访问相应的主题，返回校验合法的topic
      */
-    private List<Topic> validTopics(ClientSession clientSession,List<MqttTopicSubscription> topics){
+    private List<Topic> validTopics(ClientSession clientSession, List<MqttTopicSubscription> topics) {
         List<Topic> topicList = new ArrayList<>();
-        for(MqttTopicSubscription subscription : topics){
-            if(!pubSubPermission.subscribeVerfy(clientSession.getClientId(),subscription.topicName())){
-                log.warn("[SubPermission] this clientId:{} have no permission to subscribe this topic:{}",clientSession.getClientId(),subscription.topicName());
-                clientSession.getCtx().close();
+        for (MqttTopicSubscription subscription : topics) {
+            if (!pubSubPermission.subscribeVerfy(clientSession.getClientId(), subscription.topicName())) {
+                log.warn("[SubPermission] this clientId:{} have no permission to subscribe this topic:{}", clientSession.getClientId(), subscription.topicName());
+                clientSession.getCtx().close(); // 非法订阅主题，直接关闭连接
                 return null;
             }
-            Topic topic = new Topic(subscription.topicName(),subscription.qualityOfService().value());
+            Topic topic = new Topic(subscription.topicName(), subscription.qualityOfService().value());
             topicList.add(topic);
         }
         return topicList;
