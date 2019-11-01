@@ -55,12 +55,12 @@ public class NettyRemotingServer implements RemotingServer {
     /** 报文处理器列表 */
     private Map<MqttMessageType, Pair<RequestProcessor, ExecutorService>> processorTable;
     /** Netty事件执行器 */
-    private NettyEventExecutor nettyEventExcutor;
+    private NettyEventExecutor nettyEventExecutor;
 
     public NettyRemotingServer(NettyConfig nettyConfig, ChannelEventListener listener) {
         this.nettyConfig = nettyConfig;
         this.processorTable = new HashMap<>();
-        this.nettyEventExcutor = new NettyEventExecutor(listener);
+        this.nettyEventExecutor = new NettyEventExecutor(listener);
 
         if (!nettyConfig.isUseEpoll()) { // Nio
             selectorGroup = new NioEventLoopGroup(nettyConfig.getSelectorThreadNum(),
@@ -79,8 +79,8 @@ public class NettyRemotingServer implements RemotingServer {
 
     @Override
     public void start() {
-        // Netty event excutor start
-        this.nettyEventExcutor.start();
+        // Netty event executor start
+        this.nettyEventExecutor.start();
         // start TCP 1883 server
         startTcpServer();
         // start Websocket server
@@ -108,7 +108,7 @@ public class NettyRemotingServer implements RemotingServer {
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
                         ChannelPipeline pipeline = socketChannel.pipeline();
                         pipeline.addLast("idleStateHandler", new IdleStateHandler(0, 0, 60))
-                                .addLast("nettyConnectionManager", new NettyConnectHandler(nettyEventExcutor))
+                                .addLast("nettyConnectionManager", new NettyConnectHandler(nettyEventExecutor))
                                 
                                 .addLast("httpCodec", new HttpServerCodec())
                                 .addLast("aggregator", new HttpObjectAggregator(65535))
@@ -153,7 +153,7 @@ public class NettyRemotingServer implements RemotingServer {
                         pipeline.addLast("idleStateHandler", new IdleStateHandler(60, 0, 0))
                                 .addLast("mqttEncoder", MqttEncoder.INSTANCE)
                                 .addLast("mqttDecoder", new MqttDecoder(nettyConfig.getMaxMsgSize()))
-                                .addLast("nettyConnectionManager", new NettyConnectHandler(nettyEventExcutor))
+                                .addLast("nettyConnectionManager", new NettyConnectHandler(nettyEventExecutor))
                                 .addLast("nettyMqttHandler", new NettyMqttHandler());
                     }
                 });
