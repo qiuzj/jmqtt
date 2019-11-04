@@ -8,25 +8,25 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultSubscriptionStore implements SubscriptionStore {
 
-    private Map<String, ConcurrentHashMap<String,Subscription>> subscriptionCache = new ConcurrentHashMap<>();
+    private Map<String/*clientId*/, ConcurrentHashMap<String/*topic*/, Subscription>> subscriptionCache = new ConcurrentHashMap<>();
 
 
     @Override
     public boolean storeSubscription(String clientId, Subscription subscription) {
-        if(!subscriptionCache.containsKey(clientId)){
-            synchronized (subscriptionCache){
-                if(!subscriptionCache.containsKey(clientId)){
-                    subscriptionCache.put(clientId,new ConcurrentHashMap<>());
+        if (!subscriptionCache.containsKey(clientId)) {
+            synchronized (subscriptionCache) {
+                if (!subscriptionCache.containsKey(clientId)) {
+                    subscriptionCache.put(clientId, new ConcurrentHashMap<>());
                 }
             }
         }
-        return subscriptionCache.get(clientId).put(subscription.getTopic(),subscription) != null;
+        return subscriptionCache.get(clientId).put(subscription.getTopic(), subscription) != null;
     }
 
     @Override
     public Collection<Subscription> getSubscriptions(String clientId) {
-        Map<String,Subscription> subscriptionMap = subscriptionCache.get(clientId);
-        if(Objects.nonNull(subscriptionMap)){
+        Map<String, Subscription> subscriptionMap = subscriptionCache.get(clientId);
+        if (Objects.nonNull(subscriptionMap)) {
             return subscriptionMap.values();
         }
         return new ArrayList<>();
@@ -40,7 +40,7 @@ public class DefaultSubscriptionStore implements SubscriptionStore {
 
     @Override
     public boolean removeSubscription(String clientId, String topic) {
-        if(this.subscriptionCache.containsKey(clientId)){
+        if (this.subscriptionCache.containsKey(clientId)) {
             this.subscriptionCache.remove(topic);
         }
         return true;

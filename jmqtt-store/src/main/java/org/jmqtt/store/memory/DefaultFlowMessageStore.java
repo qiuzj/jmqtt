@@ -10,9 +10,9 @@ import org.jmqtt.store.FlowMessageStore;
 
 public class DefaultFlowMessageStore implements FlowMessageStore {
 	/** 缓存发布消息为QoS2的消息. */
-    private Map<String, ConcurrentHashMap<Integer, Message>> recCache = new ConcurrentHashMap<>();
+    private Map<String/*clientId*/, ConcurrentHashMap<Integer/*msgId*/, Message>> recCache = new ConcurrentHashMap<>();
     /** 已发送消息的缓存. 发布消息为QoS>0时使用，收到PUBACK时使用 */
-    private Map<String, ConcurrentHashMap<Integer, Message>> sendCache = new ConcurrentHashMap<>();
+    private Map<String/*clientId*/, ConcurrentHashMap<Integer/*msgId*/, Message>> sendCache = new ConcurrentHashMap<>();
 
     @Override
     public void clearClientFlowCache(String clientId) {

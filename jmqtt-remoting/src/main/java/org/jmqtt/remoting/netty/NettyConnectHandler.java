@@ -19,24 +19,24 @@ public class NettyConnectHandler extends ChannelDuplexHandler {
 
     private static final Logger log = LoggerFactory.getLogger(LoggerName.REMOTING);
 
-    private NettyEventExecutor eventExcutor;
+    private NettyEventExecutor eventExecutor;
 
     public NettyConnectHandler(NettyEventExecutor nettyEventExcutor){
-        this.eventExcutor = nettyEventExcutor;
+        this.eventExecutor = nettyEventExcutor;
     }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx){
         final String remoteAddr = RemotingHelper.getRemoteAddr(ctx.channel());
         log.debug("[ChannelActive] -> addr = {}", remoteAddr);
-        this.eventExcutor.putNettyEvent(new NettyEvent(remoteAddr, NettyEventType.CONNECT, ctx.channel()));
+        this.eventExecutor.putNettyEvent(new NettyEvent(remoteAddr, NettyEventType.CONNECT, ctx.channel()));
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx){
         final String remoteAddr = RemotingHelper.getRemoteAddr(ctx.channel());
         log.debug("[ChannelInactive] -> addr = {}", remoteAddr);
-        this.eventExcutor.putNettyEvent(new NettyEvent(remoteAddr, NettyEventType.CLOSE, ctx.channel()));
+        this.eventExecutor.putNettyEvent(new NettyEvent(remoteAddr, NettyEventType.CLOSE, ctx.channel()));
     }
 
     @Override
@@ -47,7 +47,7 @@ public class NettyConnectHandler extends ChannelDuplexHandler {
                 final String remoteAddr = RemotingHelper.getRemoteAddr(ctx.channel());
                 log.warn("[HEART_BEAT] -> IDLE exception, addr = {}", remoteAddr);
                 RemotingHelper.closeChannel(ctx.channel());
-                this.eventExcutor.putNettyEvent(new NettyEvent(remoteAddr, NettyEventType.IDLE, ctx.channel()));
+                this.eventExecutor.putNettyEvent(new NettyEvent(remoteAddr, NettyEventType.IDLE, ctx.channel()));
             }
         }
     }
@@ -58,6 +58,6 @@ public class NettyConnectHandler extends ChannelDuplexHandler {
         log.warn("Channel caught Exception remotingAddr = {}", remoteAddr);
         log.warn("Channel caught Exception,cause = {}", cause);
         RemotingHelper.closeChannel(ctx.channel());
-        this.eventExcutor.putNettyEvent(new NettyEvent(remoteAddr, NettyEventType.EXCEPTION, ctx.channel()));
+        this.eventExecutor.putNettyEvent(new NettyEvent(remoteAddr, NettyEventType.EXCEPTION, ctx.channel()));
     }
 }

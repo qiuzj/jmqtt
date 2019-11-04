@@ -64,10 +64,10 @@ public class SubscribeProcessor implements RequestProcessor {
         MqttMessage subAckMessage = MessageUtil.getSubAckMessage(messageId, ackQos);
         ctx.writeAndFlush(subAckMessage);
         
-        // 保存客户端订阅记录
+        // 保存客户端订阅记录. 为什么不是先subscribe，再返回ack，如果这里失败了怎么办？
         List<Message> retainMessages = subscribe(clientSession, validTopicList);
         // send retain messages
-        // 发送保留消息给新订阅者
+        // 发送所有匹配主题的保留消息给新的订阅者
         dispatcherRetainMessage(clientSession, retainMessages);
     }
 
@@ -86,7 +86,7 @@ public class SubscribeProcessor implements RequestProcessor {
     }
 
     /**
-     * 保存客户端订阅信息
+     * 保存客户端的订阅信息，并返回待发送给匹配该客户端主题的所有保留消息
      *  
      * @param clientSession
      * @param validTopicList
@@ -94,22 +94,27 @@ public class SubscribeProcessor implements RequestProcessor {
      */
     private List<Message> subscribe(ClientSession clientSession, List<Topic> validTopicList) {
         Collection<Message> retainMessages = null;
+        // 待发布给客户端的消息保留消息
         List<Message> needDispatcher = new ArrayList<>();
         for (Topic topic : validTopicList) {
             Subscription subscription = new Subscription(clientSession.getClientId(), topic.getTopicName(), topic.getQos());
             boolean subRs = this.subscriptionMatcher.subscribe(subscription);
             if (subRs) {
                 if (retainMessages == null) {
+                	// 获取所有保留消息
                     retainMessages = retainMessageStore.getAllRetainMessage();
                 }
+                // 遍历所有保留消息，逐条匹配订阅主题、计算最小Qos，然后添加到needDispatcher中
                 for (Message retainMsg : retainMessages) {
                     String pubTopic = (String) retainMsg.getHeader(MessageHeader.TOPIC);
                     if (subscriptionMatcher.isMatch(pubTopic, subscription.getTopic())) {
+                    	// 消息的QoS，与订阅主题的QoS进行比较，取小者，why？
                         int minQos = MessageUtil.getMinQos((int) retainMsg.getHeader(MessageHeader.QOS), topic.getQos());
                         retainMsg.putHeader(MessageHeader.QOS, minQos);
                         needDispatcher.add(retainMsg);
                     }
                 }
+                // 保存客户端的订阅记录
                 this.subscriptionStore.storeSubscription(clientSession.getClientId(), subscription);
             }
         }

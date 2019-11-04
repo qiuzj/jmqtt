@@ -10,7 +10,7 @@ import java.util.Set;
 public interface SubscriptionMatcher {
 
     /**
-     * 添加订阅到订阅树中
+     * 添加订阅记录到订阅树中
      * 
      * @param topic 订阅的Topic
      * @param subscription 订阅对象
@@ -22,7 +22,7 @@ public interface SubscriptionMatcher {
     boolean unSubscribe(String topic,String clientId);
 
     /**
-     * 匹配所有订阅者
+     * 获取匹配topic的所有订阅者
      *  
      * @param topic
      * @return
@@ -30,6 +30,7 @@ public interface SubscriptionMatcher {
     Set<Subscription> match(String topic);
 
     /**
+     * 如果消息的主题pubTopic，能够在已订阅的主题subTopic上得到匹配，则返回true
      *
      * @param pubTopic
      * @param subTopic

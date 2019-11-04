@@ -19,7 +19,7 @@ public class DefaultSubscriptionTreeMatcher implements SubscriptionMatcher {
     private final Object lock = new Object();
 
     private TreeNode root = new TreeNode(new Token("root"));
-    private Token EMPTY = new Token("");
+//    private Token EMPTY = new Token("");
     private Token SINGLE = new Token("+");
     private Token MULTY = new Token("#");
 

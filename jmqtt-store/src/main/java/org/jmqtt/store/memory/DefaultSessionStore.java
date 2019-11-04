@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class DefaultSessionStore implements SessionStore {
 
-    private Map<String, Object> sessionTable = new ConcurrentHashMap<>();
+    private Map<String/*clientId*/, Object> sessionTable = new ConcurrentHashMap<>();
 
     @Override
     public boolean containSession(String clientId) {
