@@ -5,6 +5,9 @@ import org.jmqtt.store.SessionStore;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * 客户端连接会话存储. 保存会话信息. 仅维护是否在线状态，即值为true or false
+ */
 public class DefaultSessionStore implements SessionStore {
 
     private Map<String/*clientId*/, Object> sessionTable = new ConcurrentHashMap<>();

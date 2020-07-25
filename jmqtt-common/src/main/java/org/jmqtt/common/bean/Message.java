@@ -5,10 +5,11 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
+ * 内部消息对象，用于内部传输、存储等，对外发送的时候需要转化为MqttMessage.<br>
  * inner message transfer from MqttMessage
  */
 public class Message {
-	/** 消息ID. 发送前生成，如调用ClientSession.generateMessageId() */
+	/** 消息ID. 发送前生成，如调用ClientSession.generateMessageId(). 如果是响应，则直接使用请求的消息ID. */
     private int msgId;
     /** 消息头. see MessageHeader */
     private Map<String, Object> headers;

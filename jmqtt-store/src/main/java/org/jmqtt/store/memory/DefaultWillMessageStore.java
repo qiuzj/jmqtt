@@ -24,7 +24,7 @@ public class DefaultWillMessageStore implements WillMessageStore {
 
     @Override
     public void storeWillMessage(String clientId, Message message) {
-        this.willTable.put(clientId,message);
+        this.willTable.put(clientId, message);
     }
 
     @Override

@@ -1,7 +1,7 @@
 package org.jmqtt.store;
 
 /**
- * 保存会话信息
+ * 保存会话信息. 仅维护是否在线状态，即值为true or false
  */
 public interface SessionStore {
 

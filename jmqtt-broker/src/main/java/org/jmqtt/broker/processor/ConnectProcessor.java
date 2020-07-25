@@ -61,7 +61,7 @@ public class ConnectProcessor implements RequestProcessor {
         boolean sessionPresent = false;
         
         try {
-            if (!versionValid(mqttVersion)) {
+            if (!versionValid(mqttVersion)) { // 验证协议版本号
                 returnCode = MqttConnectReturnCode.CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION;
             } else if (!clientIdVerfy(clientId)) {
                 returnCode = MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED;
@@ -104,7 +104,7 @@ public class ConnectProcessor implements RequestProcessor {
                         sessionPresent = false;
                     }
                 }
-                // 客户端在线
+                // 客户端在线状态
                 sessionStore.setSession(clientId, true);
                 
                 boolean willFlag = connectMessage.variableHeader().isWillFlag();

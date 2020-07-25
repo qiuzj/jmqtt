@@ -6,6 +6,9 @@ import org.jmqtt.store.SubscriptionStore;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * 订阅存储
+ */
 public class DefaultSubscriptionStore implements SubscriptionStore {
 
     private Map<String/*clientId*/, ConcurrentHashMap<String/*topic*/, Subscription>> subscriptionCache = new ConcurrentHashMap<>();

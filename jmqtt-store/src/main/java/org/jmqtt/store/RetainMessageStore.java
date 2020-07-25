@@ -4,6 +4,9 @@ import org.jmqtt.common.bean.Message;
 
 import java.util.Collection;
 
+/**
+ * 用于PUBLISH时保留消息. 仅当保留位为1，且QoS大于0、Payload有数据时才进行保留.
+ */
 public interface RetainMessageStore {
 
     /**
