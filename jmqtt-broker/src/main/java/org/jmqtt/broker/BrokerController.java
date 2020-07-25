@@ -58,25 +58,40 @@ public class BrokerController {
 
     private static final Logger log = LoggerFactory.getLogger(LoggerName.BROKER);
 
+    /** 服务端配置对象 */
     private BrokerConfig brokerConfig;
+    /** Netty配置对象 */
     private NettyConfig nettyConfig;
+    /** 存储系统配置对象 */
     private StoreConfig storeConfig;
-    
+
+    /** 负责接收连接、断开连接处理逻辑的线程池 */
     private ExecutorService connectExecutor;
+    /** 负责发布消息处理逻辑的线程池 */
     private ExecutorService pubExecutor;
+    /** 负责接收订阅主题处理逻辑的线程池 */
     private ExecutorService subExecutor;
+    /** 负责心跳请求处理逻辑的线程池 */
     private ExecutorService pingExecutor;
-    
+
+    /* 与上面4个线程池相对应的4个队列 */
+    /** 连接断连任务队列 */
     private LinkedBlockingQueue connectQueue;
+    /** 发布消息任务队列 */
     private LinkedBlockingQueue pubQueue;
+    /** 订阅主题任务队列 */
     private LinkedBlockingQueue subQueue;
+    /** 心跳请求任务队列 */
     private LinkedBlockingQueue pingQueue;
-    
-    /** ClientLifeCycleHookService */
+
+    /** ClientLifeCycleHookService. 连接的生命周期事件处理 */
     private ChannelEventListener channelEventListener;
+    /** 负责的Netty启动、关闭 */
     private NettyRemotingServer remotingServer;
+    /** 消息分发器 */
     private MessageDispatcher messageDispatcher;
     private FlowMessageStore flowMessageStore;
+    /** 订阅树维护 */
     private SubscriptionMatcher subscriptionMatcher;
     private WillMessageStore willMessageStore;
     private RetainMessageStore retainMessageStore;
@@ -85,37 +100,45 @@ public class BrokerController {
     private SessionStore sessionStore;
     /** 抽象存储对象，可插拔 */
     private AbstractMqttStore abstractMqttStore;
-    
+    /** 客户端连接相关权限的校验器 */
     private ConnectPermission connectPermission;
+    /** 订阅、发布相关权限的校验器 */
     private PubSubPermission pubSubPermission;
+    /** 离线消息发送服务 */
     private ReSendMessageService reSendMessageService;
 
     public BrokerController(BrokerConfig brokerConfig, NettyConfig nettyConfig,StoreConfig storeConfig){
+        /* 保存配置信息 */
         this.brokerConfig = brokerConfig;
         this.nettyConfig = nettyConfig;
         this.storeConfig = storeConfig;
 
+        /* 创建任务队列 */
         this.connectQueue = new LinkedBlockingQueue(100000);
         this.pubQueue = new LinkedBlockingQueue(100000);
         this.subQueue = new LinkedBlockingQueue(100000);
         this.pingQueue = new LinkedBlockingQueue(10000);
 
-        // store pluggable. 初始化存储
+        // store pluggable. 初始化存储，可插拨式，选择不同的存储系统.
         {
             switch (storeConfig.getStoreType()){
                 case 1:
-                    this.abstractMqttStore = new RDBMqttStore(storeConfig);
+                    this.abstractMqttStore = new RDBMqttStore(storeConfig); // rocksdb存储
                     break;
                 default:
-                    this.abstractMqttStore = new DefaultMqttStore();
+                    this.abstractMqttStore = new DefaultMqttStore(); // 内存存储
                 break;
             }
+
+            // 初始化存储对象
             try {
                 this.abstractMqttStore.init();
             } catch (Exception e) {
                 System.out.println("Init Store failure,exception=" + e);
                 e.printStackTrace();
             }
+
+            // 放一份存储对象的相关引用到当前对象，方便后续使用
             this.flowMessageStore = this.abstractMqttStore.getFlowMessageStore();
             this.willMessageStore = this.abstractMqttStore.getWillMessageStore();
             this.retainMessageStore = this.abstractMqttStore.getRetainMessageStore();
@@ -124,7 +147,7 @@ public class BrokerController {
             this.sessionStore = this.abstractMqttStore.getSessionStore();
         }
         
-        // permission pluggable
+        // permission pluggable. 初始化权限校验器
         {
             this.connectPermission = new DefaultConnectPermission();
             this.pubSubPermission = new DefaultPubSubPermission();
@@ -170,12 +193,14 @@ public class BrokerController {
 
     public void start(){
 
-        MixAll.printProperties(log,brokerConfig);
-        MixAll.printProperties(log,nettyConfig);
-        MixAll.printProperties(log,storeConfig);
+        // 打印所有属性配置的键值对
+        MixAll.printProperties(log, brokerConfig);
+        MixAll.printProperties(log, nettyConfig);
+        MixAll.printProperties(log, storeConfig);
 
         // init and register processor. 初始化处理器，并将报文类型与处理器、线程池关联，同时注册到远程Netty服务中.
         {
+            // 1.初始化处理器. 除了CONNACK、SUBACK、UNSUBACK和PINGRESP四个报文，其他14个都有相应的处理器.
             RequestProcessor connectProcessor = new ConnectProcessor(this);
             RequestProcessor disconnectProcessor = new DisconnectProcessor(this);
             RequestProcessor pingProcessor = new PingProcessor();
@@ -187,11 +212,14 @@ public class BrokerController {
             RequestProcessor pubAckProcessor = new PubAckProcessor(flowMessageStore);
             RequestProcessor pubCompProcessor = new PubCompProcessor(flowMessageStore);
 
+            // 2.注册报文处理器. 先将处理器和线程池绑定在一起，作为一个对象，再将对象与报文类型关联起来并进行缓存.
             this.remotingServer.registerProcessor(MqttMessageType.CONNECT, connectProcessor, connectExecutor);
             this.remotingServer.registerProcessor(MqttMessageType.DISCONNECT, disconnectProcessor, connectExecutor);
             
             this.remotingServer.registerProcessor(MqttMessageType.PINGREQ, pingProcessor, pingExecutor);
-            
+
+            // 下面几个PUB为什么这样分组，有点不明白。既然是双向的，为什么不是都使用同一个线程池？
+
             this.remotingServer.registerProcessor(MqttMessageType.PUBLISH, publishProcessor, pubExecutor);
             this.remotingServer.registerProcessor(MqttMessageType.PUBACK, pubAckProcessor, pubExecutor);
             this.remotingServer.registerProcessor(MqttMessageType.PUBREL, pubRelProcessor, pubExecutor);

@@ -9,7 +9,7 @@ import java.util.Objects;
  * inner message transfer from MqttMessage
  */
 public class Message {
-	/** 消息ID. 发送前生成，如调用ClientSession.generateMessageId(). 如果是响应，则直接使用请求的消息ID. */
+	/** 消息ID. 如果是发送消息，则在发送前调用ClientSession.generateMessageId()生成. 如果是响应，则直接使用请求的消息ID. */
     private int msgId;
     /** 消息头. see MessageHeader */
     private Map<String, Object> headers;

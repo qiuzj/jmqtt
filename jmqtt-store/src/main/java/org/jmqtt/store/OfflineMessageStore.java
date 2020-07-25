@@ -16,6 +16,12 @@ public interface OfflineMessageStore {
 	 */
     void clearOfflineMsgCache(String clientId);
 
+    /**
+     * 该客户端是否有离线消息.
+     *
+     * @param clientId
+     * @return
+     */
     boolean containOfflineMsg(String clientId);
 
     /**

@@ -1,5 +1,8 @@
 package org.jmqtt.common.config;
 
+/**
+ * Netty配置
+ */
 public class NettyConfig {
 
 	/** boss线程数 */

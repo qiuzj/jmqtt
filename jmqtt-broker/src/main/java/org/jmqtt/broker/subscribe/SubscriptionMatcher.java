@@ -5,6 +5,7 @@ import org.jmqtt.common.bean.Subscription;
 import java.util.Set;
 
 /**
+ * 订阅树管理.<br>
  * Subscription tree
  */
 public interface SubscriptionMatcher {
@@ -19,7 +20,7 @@ public interface SubscriptionMatcher {
      */
     boolean subscribe(Subscription subscription);
 
-    boolean unSubscribe(String topic,String clientId);
+    boolean unSubscribe(String topic, String clientId);
 
     /**
      * 获取匹配topic的所有订阅者

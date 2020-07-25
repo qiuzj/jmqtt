@@ -18,7 +18,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.locks.LockSupport;
 
 /**
- * 客户端重新连接上来时，重新发送离线消息和已发送未确认的消息
+ * 客户端重新连接上来时，重新发送离线消息和已发送未确认的消息.<br>
  * send offline message and flow message when client re connect and cleanSession is false
  */
 public class ReSendMessageService {

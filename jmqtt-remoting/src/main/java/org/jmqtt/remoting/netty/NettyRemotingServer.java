@@ -40,7 +40,9 @@ import io.netty.handler.codec.mqtt.MqttMessage;
 import io.netty.handler.codec.mqtt.MqttMessageType;
 import io.netty.handler.timeout.IdleStateHandler;
 
-
+/**
+ * 负责的Netty启动、关闭
+ */
 public class NettyRemotingServer implements RemotingServer {
 
     private static final Logger log = LoggerFactory.getLogger(LoggerName.REMOTING);
@@ -52,7 +54,7 @@ public class NettyRemotingServer implements RemotingServer {
     private EventLoopGroup ioGroup;
     /** Netty IO模型Channel实现类 */
     private Class<? extends ServerChannel> clazz;
-    /** 报文处理器列表 */
+    /** 报文处理器列表. 格式：<报文类型, 处理器对象> */
     private Map<MqttMessageType, Pair<RequestProcessor, ExecutorService>> processorTable;
     /** Netty事件执行器 */
     private NettyEventExecutor nettyEventExecutor;
@@ -178,6 +180,13 @@ public class NettyRemotingServer implements RemotingServer {
         }
     }
 
+    /**
+     * 注册报文处理器. 先将处理器和线程池绑定在一起，作为一个对象，再将对象与报文类型关联起来并进行缓存.
+     *
+     * @param mqttType 报文类型. 共有14种，服务端只需要处理其中的10种（除了CONNACK、SUBACK、UNSUBACK和PINGRESP）.
+     * @param processor 报文类型mqttType对应的处理器
+     * @param executorService 执行processor处理器对应的线程池
+     */
     public void registerProcessor(MqttMessageType mqttType, RequestProcessor processor, ExecutorService executorService) {
         this.processorTable.put(mqttType, new Pair<>(processor, executorService));
     }

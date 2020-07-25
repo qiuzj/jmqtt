@@ -36,6 +36,7 @@ public class DefaultOfflineMessageStore implements OfflineMessageStore {
 
     @Override
     public boolean addOfflineMessage(String clientId, Message message) {
+        // 如果客户端没有离线消息，则初始化一个空队列
         if (!this.offlineTable.containsKey(clientId)) {
             synchronized (offlineTable){
                 if (!offlineTable.containsKey(clientId)) {
@@ -44,8 +45,9 @@ public class DefaultOfflineMessageStore implements OfflineMessageStore {
                 }
             }
         }
+
         BlockingQueue<Message> queue = this.offlineTable.get(clientId);
-        // 离线消息太多则丢弃掉超出部分，先进先扔（FIFO）
+        // 离线消息太多则丢弃掉超出部分，先进先扔（FIFO）. 非线程安全，在take()之前可能数据已经变化了
         while (queue.size() > msgMaxNum) {
             try {
                 queue.take();
@@ -53,6 +55,7 @@ public class DefaultOfflineMessageStore implements OfflineMessageStore {
                 log.warn("[StoreOfflineMessage] -> Store Offline message error,clientId={},msgId={}", clientId, message.getMsgId());
             }
         }
+        // 缓存离线消息
         queue.offer(message);
         
         return true;

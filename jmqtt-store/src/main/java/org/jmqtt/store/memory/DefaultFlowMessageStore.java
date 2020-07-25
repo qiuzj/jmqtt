@@ -11,7 +11,7 @@ import org.jmqtt.store.FlowMessageStore;
 public class DefaultFlowMessageStore implements FlowMessageStore {
 	/** 缓存发布消息为QoS2的消息. */
     private Map<String/*clientId*/, ConcurrentHashMap<Integer/*msgId*/, Message>> recCache = new ConcurrentHashMap<>();
-    /** 已发送消息的缓存. 发布消息为QoS>0时使用，收到PUBACK时使用 */
+    /** 已发送消息的缓存，在发送前先缓存起来. 发布消息为QoS>0时使用，收到PUBACK时使用 */
     private Map<String/*clientId*/, ConcurrentHashMap<Integer/*msgId*/, Message>> sendCache = new ConcurrentHashMap<>();
 
     @Override
@@ -45,6 +45,7 @@ public class DefaultFlowMessageStore implements FlowMessageStore {
 
     @Override
     public boolean cacheSendMsg(String clientId, Message message) {
+        // 初始化客户端的缓存Map
         if (!sendCache.containsKey(clientId)) {
             synchronized (sendCache) {
                 if (!sendCache.containsKey(clientId)) {
@@ -52,6 +53,7 @@ public class DefaultFlowMessageStore implements FlowMessageStore {
                 }
             }
         }
+        // 缓存即将发送的消息
         this.sendCache.get(clientId).put(message.getMsgId(), message);
         return true;
     }

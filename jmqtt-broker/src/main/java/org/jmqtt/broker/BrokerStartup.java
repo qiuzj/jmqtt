@@ -42,8 +42,11 @@ public class BrokerStartup {
         
         String jmqttHome = null;
         String jmqttConfigPath = null;
+        // 服务端配置
         BrokerConfig brokerConfig = new BrokerConfig();
+        // Netty配置
         NettyConfig nettyConfig = new NettyConfig();
+        // 存储系统配置
         StoreConfig storeConfig = new StoreConfig();
         
         /* 获取命令行参数 */
@@ -54,6 +57,7 @@ public class BrokerStartup {
         if (StringUtils.isNotEmpty(jmqttConfigPath)) {
             initConfig(jmqttConfigPath, brokerConfig, nettyConfig, storeConfig);
         }
+        // 如果命令行没有指定主目录，则从环境变量中获取
         if (StringUtils.isEmpty(jmqttHome)) {
             jmqttHome = brokerConfig.getJmqttHome();
         }
@@ -61,17 +65,19 @@ public class BrokerStartup {
             throw new Exception("please set JMQTT_HOME.");
         }
         
-        /* 日志 */
+        /* 初始化日志对象 */
         LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
         JoranConfigurator configurator = new JoranConfigurator();
         configurator.setContext(lc);
         lc.reset();
+        // 指定日志配置文件的路径
         configurator.doConfigure(jmqttHome + "/conf/logback_broker.xml");
         
         // BrokerController为初始化类，初始化所有的必备环境，其中acl，store的插件配置也必须在这里初始化
         BrokerController brokerController = new BrokerController(brokerConfig, nettyConfig, storeConfig);
         brokerController.start();
 
+        // 注册关闭逻辑
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             @Override
             public void run() {
@@ -112,8 +118,10 @@ public class BrokerStartup {
         Properties properties = new Properties();
         BufferedReader  bufferedReader = null;
         try {
+            // 将属性文件加载到Properties中
             bufferedReader = new BufferedReader(new FileReader(jmqttConfigPath));
             properties.load(bufferedReader);
+            // 从属性对象中获取相应配置字段的值，分别调用setter方法设置到三个Config中
             MixAll.properties2POJO(properties, brokerConfig);
             MixAll.properties2POJO(properties, nettyConfig);
             MixAll.properties2POJO(properties, storeConfig);

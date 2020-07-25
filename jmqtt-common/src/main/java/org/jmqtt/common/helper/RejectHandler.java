@@ -8,7 +8,7 @@ public class RejectHandler implements RejectedExecutionHandler {
     private String task;
     private int maxBlockQueueSize;
 
-    public RejectHandler(String task,int maxBlockQueueSize){
+    public RejectHandler(String task, int maxBlockQueueSize) {
         this.task = task;
         this.maxBlockQueueSize = maxBlockQueueSize;
     };

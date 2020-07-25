@@ -8,7 +8,7 @@ public class ThreadFactoryImpl implements ThreadFactory {
     private AtomicInteger counter = new AtomicInteger(0);
     private String threadName;
 
-    public ThreadFactoryImpl(String threadName){
+    public ThreadFactoryImpl(String threadName) {
         this.threadName = threadName;
     }
 

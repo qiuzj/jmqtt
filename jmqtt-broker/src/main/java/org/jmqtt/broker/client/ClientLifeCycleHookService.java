@@ -34,7 +34,7 @@ public class ClientLifeCycleHookService implements ChannelEventListener {
         if (StringUtils.isNotEmpty(clientId)) {
             if (willMessageStore.hasWillMessage(clientId)) {
                 Message willMessage = willMessageStore.getWillMessage(clientId);
-                // 客户端连接关闭时，发布遗嘱消息
+                // 客户端连接关闭时，发布遗嘱消息. 是客户端关，服务端暂时还没关，所以可以发出去吗？
                 messageDispatcher.appendMessage(willMessage);
             }
         }

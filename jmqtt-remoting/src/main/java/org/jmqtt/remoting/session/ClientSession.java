@@ -58,7 +58,7 @@ public class ClientSession {
     }
 
     /**
-     * 生成消息ID. 2个字节
+     * 生成消息ID. 报文标识符为2个字节，1~65535循环使用.
      *  
      * @return
      */

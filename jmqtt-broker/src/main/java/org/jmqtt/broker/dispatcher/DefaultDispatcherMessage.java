@@ -29,14 +29,19 @@ import io.netty.handler.codec.mqtt.MqttPublishMessage;
 public class DefaultDispatcherMessage implements MessageDispatcher {
 
     private static final Logger log = LoggerFactory.getLogger(LoggerName.MESSAGE_TRACE);
+    /** 消费分批线程是否已停止，默认为false表示运行中. 调用shutdown时，设置为true线程退出 */
     private boolean stoped = false;
     /** 待发送的消息队列 */
     private static final BlockingQueue<Message> messageQueue = new LinkedBlockingQueue<>(100000);
     /** 消息发送线程池 */
     private ThreadPoolExecutor pollThread;
+    /** 发送线程池线程数 */
     private int pollThreadNum;
+    /** 订阅树管理 */
     private SubscriptionMatcher subscriptionMatcher;
+    /** 未ACK消息缓存 */
     private FlowMessageStore flowMessageStore;
+    /** 离线消息缓存 */
     private OfflineMessageStore offlineMessageStore;
 
     public DefaultDispatcherMessage(int pollThreadNum, SubscriptionMatcher subscriptionMatcher, FlowMessageStore flowMessageStore, OfflineMessageStore offlineMessageStore){
@@ -66,15 +71,17 @@ public class DefaultDispatcherMessage implements MessageDispatcher {
                     try {
                         List<Message> messageList = new ArrayList<>(32);
                         for (int i = 0; i < 32; i++) {
+                            // 不能使用永久等待，因为本批可能已经凑了一部分，如果无限等待则这部分可能很久都发不出去
                             Message message = messageQueue.poll(waitTime, TimeUnit.MILLISECONDS);
                             if (Objects.nonNull(message)) {
                                 messageList.add(message);
-                                waitTime = 100;
+                                waitTime = 100; // 队列在超时前能消费到消息的话，则等待时间设置为较短的100ms
                             } else {
-                                waitTime = 3000; // 如果没有待发送的消息，则每从队列获取的超时时间为3s
-                                break;
+                                waitTime = 3000; // 如果等待超时，则等待时间设置为较长的3s
+                                break; // 超时则跳出循环，已有的消息不满32也先发出去
                             }
                         }
+
                         // 每个发送任务最大32条消息
                         if (messageList.size() > 0) {
                             AsyncDispatcher dispatcher = new AsyncDispatcher(messageList);
@@ -99,12 +106,12 @@ public class DefaultDispatcherMessage implements MessageDispatcher {
 
     @Override
     public void shutdown(){
-        this.stoped = true;
-        this.pollThread.shutdown();
+        this.stoped = true; // 关闭分批线程
+        this.pollThread.shutdown(); // 关闭消息分发线程
     }
 
     /**
-     * 异步发布一批消息. 如果客户端不在线，则进行离线存储.
+     * 消息分发任务. 异步发布一批消息. 如果客户端不在线，则进行离线存储.
      *  
      */
     class AsyncDispatcher implements Runnable {
@@ -122,20 +129,24 @@ public class DefaultDispatcherMessage implements MessageDispatcher {
                     for (Message message : messages) {
                     	// 根据topic找到所有订阅记录
                         Set<Subscription> subscriptions = subscriptionMatcher.match((String) message.getHeader(MessageHeader.TOPIC));
+
                         // 循环将当前消息发送给每个订阅者
                         for (Subscription subscription : subscriptions) {
                             String clientId = subscription.getClientId();
-                            // 订阅者的客户端会话
+                            // 获取订阅者的客户端会话. 如果客户端连接到其他服务端实例呢？
                             ClientSession clientSession = ConnectManager.getInstance().getClient(subscription.getClientId());
+
                             // 客户端在线则立刻发送
                             if (ConnectManager.getInstance().containClient(clientId)) {
                             	// 获取最小的QoS=min(消息携带的QoS, 订阅记录的QoS)
                                 int qos = MessageUtil.getMinQos((int) message.getHeader(MessageHeader.QOS), subscription.getQos());
                                 int messageId = clientSession.generateMessageId();
-                                // 更新消息的QoS
+
+                                // 更新消息的QoS. 为什么使用最小的QoS，而不是最大？
                                 message.putHeader(MessageHeader.QOS, qos);
                                 message.setMsgId(messageId);
-                                // QoS大于0时，缓存已发送的消息
+
+                                // QoS大于0时，缓存已发送的消息.
                                 if (qos > 0) {
                                     flowMessageStore.cacheSendMsg(clientId, message);
                                 }

@@ -2,6 +2,9 @@ package org.jmqtt.remoting.netty;
 
 import io.netty.channel.Channel;
 
+/**
+ * 通道/连接事件监听器
+ */
 public interface ChannelEventListener {
 
     /**

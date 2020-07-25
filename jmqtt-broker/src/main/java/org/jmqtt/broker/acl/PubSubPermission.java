@@ -1,6 +1,7 @@
 package org.jmqtt.broker.acl;
 
 /**
+ * 发布信息、订阅主题权限校验.<br>
  * publish messages and subscribe topic permisson
  */
 public interface PubSubPermission {

@@ -3,14 +3,16 @@ package org.jmqtt.common.config;
 import java.io.File;
 import java.util.ArrayList;
 
+/**
+ * 存储系统配置
+ */
 public class StoreConfig {
 
-
     /**
+     * 存储类型.<br>
      * store type default 1:rocksdb  2.redis  3.in memory
      */
     private int storeType = 3;
-
 
     /* rocksdb store configuration start */
     private String rocksDbPath = System.getProperty("user.home",System.getenv("user.home"))+ File.separator + "rocksdb";
