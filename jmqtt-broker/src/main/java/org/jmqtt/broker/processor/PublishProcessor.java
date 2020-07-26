@@ -93,7 +93,7 @@ public class PublishProcessor extends AbstractMessageProcessor implements Reques
         log.debug("[PubMessage] -> Process qos2 message,clientId={}", innerMsg.getClientId());
         boolean flag = flowMessageStore.cacheRecMsg(innerMsg.getClientId(), innerMsg);
         if (!flag) {
-            log.warn("[PubMessage] -> cache qos2 pub message failure,clientId={}", innerMsg.getClientId());
+            log.warn("[PubMessage] -> cache qos2 pub message failure, clientId={}", innerMsg.getClientId());
         }
         MqttMessage pubRecMessage = MessageUtil.getPubRecMessage(innerMsg.getMsgId());
         ctx.writeAndFlush(pubRecMessage);

@@ -221,7 +221,7 @@ public class BrokerController {
             // 下面几个PUB为什么这样分组，有点不明白。既然是双向的，为什么不是都使用同一个线程池？
 
             this.remotingServer.registerProcessor(MqttMessageType.PUBLISH, publishProcessor, pubExecutor);
-            this.remotingServer.registerProcessor(MqttMessageType.PUBACK, pubAckProcessor, pubExecutor);
+            this.remotingServer.registerProcessor(MqttMessageType.PUBACK, pubAckProcessor, pubExecutor); // 按理说，这个应该放到sub线程池
             this.remotingServer.registerProcessor(MqttMessageType.PUBREL, pubRelProcessor, pubExecutor);
             
             this.remotingServer.registerProcessor(MqttMessageType.SUBSCRIBE, subscribeProcessor, subExecutor);
@@ -236,7 +236,7 @@ public class BrokerController {
         this.reSendMessageService.start();
         // 启动Netty
         this.remotingServer.start();
-        log.info("JMqtt Server start success and version = {}",brokerConfig.getVersion());
+        log.info("JMqtt Server start success and version = {}", brokerConfig.getVersion());
     }
 
     public void shutdown(){

@@ -10,8 +10,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 
-/***
- * 客户端"网络"连接处理器
+/**
+ * 客户端"网络"连接处理器. 连接、断连、异常、空闲事件处理.
  *  
  * @version
  */
@@ -29,6 +29,7 @@ public class NettyConnectHandler extends ChannelDuplexHandler {
     public void channelActive(ChannelHandlerContext ctx){
         final String remoteAddr = RemotingHelper.getRemoteAddr(ctx.channel());
         log.debug("[ChannelActive] -> addr = {}", remoteAddr);
+        // 发布连接事件
         this.eventExecutor.putNettyEvent(new NettyEvent(remoteAddr, NettyEventType.CONNECT, ctx.channel()));
     }
 
@@ -36,6 +37,7 @@ public class NettyConnectHandler extends ChannelDuplexHandler {
     public void channelInactive(ChannelHandlerContext ctx){
         final String remoteAddr = RemotingHelper.getRemoteAddr(ctx.channel());
         log.debug("[ChannelInactive] -> addr = {}", remoteAddr);
+        // 发布断连事件
         this.eventExecutor.putNettyEvent(new NettyEvent(remoteAddr, NettyEventType.CLOSE, ctx.channel()));
     }
 
@@ -43,10 +45,14 @@ public class NettyConnectHandler extends ChannelDuplexHandler {
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
         if (evt instanceof IdleStateEvent) {
             IdleStateEvent event = (IdleStateEvent) evt;
+            // 根据协议规定，连接空闲超过客户端keepAlive时间的1.5倍，则关闭连接
             if (event.state().equals(IdleState.ALL_IDLE)) {
                 final String remoteAddr = RemotingHelper.getRemoteAddr(ctx.channel());
                 log.warn("[HEART_BEAT] -> IDLE exception, addr = {}", remoteAddr);
+
+                // 1.关闭连接
                 RemotingHelper.closeChannel(ctx.channel());
+                // 2.发布空闲事件
                 this.eventExecutor.putNettyEvent(new NettyEvent(remoteAddr, NettyEventType.IDLE, ctx.channel()));
             }
         }
@@ -57,7 +63,10 @@ public class NettyConnectHandler extends ChannelDuplexHandler {
         String remoteAddr = RemotingHelper.getRemoteAddr(ctx.channel());
         log.warn("Channel caught Exception remotingAddr = {}", remoteAddr);
         log.warn("Channel caught Exception,cause = {}", cause);
+
+        // 1.关闭连接
         RemotingHelper.closeChannel(ctx.channel());
+        // 2.发布异常事件
         this.eventExecutor.putNettyEvent(new NettyEvent(remoteAddr, NettyEventType.EXCEPTION, ctx.channel()));
     }
 }

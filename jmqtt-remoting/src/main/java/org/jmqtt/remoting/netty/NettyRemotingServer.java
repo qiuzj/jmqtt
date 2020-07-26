@@ -83,8 +83,10 @@ public class NettyRemotingServer implements RemotingServer {
     public void start() {
         // Netty event executor start
         this.nettyEventExecutor.start();
+
         // start TCP 1883 server
         startTcpServer();
+
         // start Websocket server
         if (nettyConfig.isStartWebsocket()) {
             startWebsocketServer();
@@ -152,7 +154,7 @@ public class NettyRemotingServer implements RemotingServer {
                     @Override
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
                         ChannelPipeline pipeline = socketChannel.pipeline();
-                        pipeline.addLast("idleStateHandler", new IdleStateHandler(60, 0, 0))
+                        pipeline.addLast("idleStateHandler", new IdleStateHandler(60, 0, 0)) // 读空闲60s触发空闲事件，客户端连接上来后，如果传了keepAlive时间则会替换掉该Handler
                                 .addLast("mqttEncoder", MqttEncoder.INSTANCE)
                                 .addLast("mqttDecoder", new MqttDecoder(nettyConfig.getMaxMsgSize()))
                                 .addLast("nettyConnectionManager", new NettyConnectHandler(nettyEventExecutor))
@@ -201,9 +203,11 @@ public class NettyRemotingServer implements RemotingServer {
         public void channelRead(ChannelHandlerContext ctx, Object obj) {
             MqttMessage mqttMessage = (MqttMessage) obj;
             if (mqttMessage != null && mqttMessage.decoderResult().isSuccess()) {
+                // 报文类型
                 MqttMessageType messageType = mqttMessage.fixedHeader().messageType();
                 log.debug("[Remoting] -> receive mqtt code,type:{}", messageType.value());
-                
+
+                // 根据报文类型，获得对应的处理器和线程池
                 Pair<RequestProcessor, ExecutorService> pair = processorTable.get(messageType);
                 
                 Runnable runnable = new Runnable() {
@@ -218,10 +222,10 @@ public class NettyRemotingServer implements RemotingServer {
                 	// 使用报文类型对应的线程池执行处理逻辑（RequestProcessor.processRequest）
                     pair.getObject2().submit(runnable);
                 } catch (RejectedExecutionException ex) {
-                    log.warn("Reject mqtt request,cause={}", ex.getMessage());
+                    log.warn("Reject mqtt request, cause={}", ex.getMessage());
                 }
             } else {
-                ctx.close();
+                ctx.close(); // 如果遇到异常报文，则关闭连接.
             }
         }
 

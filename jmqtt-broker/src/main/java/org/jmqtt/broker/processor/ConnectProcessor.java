@@ -146,7 +146,7 @@ public class ConnectProcessor implements RequestProcessor {
     }
 
     /**
-     * 更新keepAlive时间
+     * 根据keepAlive时间，计算超时时间，并重新创建IdleStateHandler
      *  
      * @param clientId
      * @param ctx
@@ -155,7 +155,9 @@ public class ConnectProcessor implements RequestProcessor {
      */
     private boolean keepAlive(String clientId, ChannelHandlerContext ctx, int heatbeatSec) {
         if (this.connectPermission.verfyHeartbeatTime(clientId, heatbeatSec)) {
+            // 根据协议规定，服务端检查客户端超时并断开连接的时间为keepAlive时间的1.5倍
             int keepAlive = (int) (heatbeatSec * 1.5f);
+            // 删除旧的IdleStateHandler
             if (ctx.pipeline().names().contains("idleStateHandler")) {
                 ctx.pipeline().remove("idleStateHandler");
             }

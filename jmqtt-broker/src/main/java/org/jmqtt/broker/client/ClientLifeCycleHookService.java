@@ -9,7 +9,7 @@ import org.jmqtt.remoting.util.NettyUtil;
 import org.jmqtt.store.WillMessageStore;
 
 /**
- * 客户端连接生命周期处理服务. 对应于 NettyEventType 的4种事件（客户端连接、关闭、空闲、异常）.
+ * 客户端连接生命周期处理服务. 对应于 NettyEventType 的4种事件（客户端连接、关闭、空闲、异常）.<br>
  * 可以在各个阶段添加需要处理的工作.
  *  
  * @version
@@ -31,6 +31,7 @@ public class ClientLifeCycleHookService implements ChannelEventListener {
     @Override
     public void onChannelClose(String remoteAddr, Channel channel) {
         String clientId = NettyUtil.getClientId(channel);
+        // 连接关闭时，发送遗嘱消息. 连接都关闭了，发送失败还要重发？
         if (StringUtils.isNotEmpty(clientId)) {
             if (willMessageStore.hasWillMessage(clientId)) {
                 Message willMessage = willMessageStore.getWillMessage(clientId);

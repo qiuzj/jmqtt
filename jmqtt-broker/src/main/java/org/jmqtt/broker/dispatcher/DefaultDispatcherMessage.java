@@ -26,6 +26,9 @@ import org.slf4j.LoggerFactory;
 
 import io.netty.handler.codec.mqtt.MqttPublishMessage;
 
+/**
+ * 普通消息发送，遗嘱消息发送. 重发消息在org.jmqtt.broker.recover.ReSendMessageService
+ */
 public class DefaultDispatcherMessage implements MessageDispatcher {
 
     private static final Logger log = LoggerFactory.getLogger(LoggerName.MESSAGE_TRACE);

@@ -15,7 +15,7 @@ public class RemotingHelper {
     private static final Logger log = LoggerFactory.getLogger(LoggerName.REMOTING);
 
     /**
-     * 关闭Channel
+     * 关闭连接
      *  
      * @param channel
      */
@@ -24,13 +24,13 @@ public class RemotingHelper {
         channel.close().addListener(new ChannelFutureListener() {
             @Override
             public void operationComplete(ChannelFuture channelFuture) throws Exception {
-                log.info("[closeChannel] -> close the connection,addr={},result={}", remoteAddr, channelFuture.isSuccess());
+                log.info("[closeChannel] -> close the connection, addr={}, result={}", remoteAddr, channelFuture.isSuccess());
             }
         });
     }
 
     /**
-     * 获取Channel的远程地址
+     * 获取客户端IP
      *  
      * @param channel
      * @return
@@ -39,6 +39,7 @@ public class RemotingHelper {
         if (null == channel) {
             return "";
         }
+
         SocketAddress remote = channel.remoteAddress();
         final String addr = remote != null ? remote.toString() : "";
         if (addr.length() > 0) {
@@ -46,11 +47,9 @@ public class RemotingHelper {
             if (index >= 0) {
                 return addr.substring(index + 1);
             }
-
             return addr;
         }
         return "";
     }
-
 
 }

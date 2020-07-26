@@ -8,7 +8,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Netty事件执行器
+ * Netty事件执行器. 处理4种事件：连接、断连、空闲、异常. 将事件分发到监听器中进行相应处理.<br>
+ * 这个类，一方面用于存储事件，另一方面是为了异步执行事件.
  *  
  * @version
  */
@@ -18,7 +19,7 @@ public class NettyEventExecutor implements Runnable {
     /** 事件队列 */
     private LinkedBlockingQueue<NettyEvent> eventQueue = new LinkedBlockingQueue<>();
     private final int maxSize = 1000;
-    /** ClientLifeCycleHookService */
+    /** 事件监听器. ClientLifeCycleHookService */
     private ChannelEventListener listener;
     boolean stoped = false;
     private Thread thread;
@@ -28,7 +29,7 @@ public class NettyEventExecutor implements Runnable {
     }
 
     /**
-     * 新增事件
+     * 将新的事件存入事件队列待处理
      *  
      * @param nettyEvent
      */
@@ -48,16 +49,16 @@ public class NettyEventExecutor implements Runnable {
                 if (nettyEvent != null && listener != null) {
                 	// 处理4种事件
                     switch (nettyEvent.getEventType()) {
-                        case CONNECT:
+                        case CONNECT: // 连接事件
                             listener.onChannelConnect(nettyEvent.getRemoteAddr(), nettyEvent.getChannel());
                             break;
-                        case CLOSE:
+                        case CLOSE:  // 断开连接事件
                             listener.onChannelClose(nettyEvent.getRemoteAddr(), nettyEvent.getChannel());
                             break;
-                        case EXCEPTION:
+                        case EXCEPTION: // 异常事件
                             listener.onChannelException(nettyEvent.getRemoteAddr(), nettyEvent.getChannel());
                             break;
-                        case IDLE:
+                        case IDLE: // 空闲事件
                             listener.onChannelIdle(nettyEvent.getRemoteAddr(), nettyEvent.getChannel());
                             break;
                          default:
@@ -71,11 +72,17 @@ public class NettyEventExecutor implements Runnable {
         log.info("[NettyEvent] -> NettyEventExcutor service end");
     }
 
-    public void start(){
+    /**
+     * 启动处理事件的线程
+     */
+    public void start() {
         this.thread = new Thread(this);
         this.thread.start();
     }
 
+    /**
+     * 停止线程
+     */
     public void shutdown(){
         this.stoped = true;
     }

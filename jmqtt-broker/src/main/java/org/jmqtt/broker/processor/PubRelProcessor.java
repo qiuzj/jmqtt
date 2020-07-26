@@ -40,7 +40,10 @@ public class PubRelProcessor extends AbstractMessageProcessor implements Request
         
         if (ConnectManager.getInstance().containClient(clientId)) {
             Message message = flowMessageStore.releaseRecMsg(clientId, messageId);
-            // 收到发送端的PUBREC报文，再开始发送消息. 假设没收到，那要么消息一直存储要么丢弃...坑爹了？
+            // 收到（客户端）发送端的PUBREC报文，再开始发送消息. 假设没收到，那要么消息一直存储要么丢弃...坑爹了？
+            // 对于QoS 2，服务端中转消息时才有这第第二步ACK，说明发送端已经知道服务端接收完消息了.
+            // 如果发送端没有收到PubComp，是否重发？如果不重发，可能服务端根本没收到PubRec，于是消息没发；
+            // 如果重发，但服务端已经将消息发送出去，再来的消息需要考虑去重。
             if (Objects.nonNull(message)) {
                 super.processMessage(message);
             } else {
