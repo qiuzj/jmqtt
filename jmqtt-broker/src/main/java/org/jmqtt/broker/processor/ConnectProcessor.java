@@ -23,7 +23,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-
+/**
+ * 连接报文处理器
+ */
 public class ConnectProcessor implements RequestProcessor {
 
     private static final Logger log = LoggerFactory.getLogger(LoggerName.CLIENT_TRACE);
@@ -52,24 +54,28 @@ public class ConnectProcessor implements RequestProcessor {
     public void processRequest(ChannelHandlerContext ctx, MqttMessage mqttMessage) {
         MqttConnectMessage connectMessage = (MqttConnectMessage) mqttMessage;
         MqttConnectReturnCode returnCode = null;
+
         int mqttVersion = connectMessage.variableHeader().version();
         String clientId = connectMessage.payload().clientIdentifier();
-        boolean cleansession = connectMessage.variableHeader().isCleanSession();
+        boolean cleanSession = connectMessage.variableHeader().isCleanSession();
         String userName = connectMessage.payload().userName();
         byte[] password = connectMessage.payload().passwordInBytes();
         ClientSession clientSession = null;
         boolean sessionPresent = false;
         
         try {
+            // 1.客户端合法性检查
             if (!versionValid(mqttVersion)) { // 验证协议版本号
                 returnCode = MqttConnectReturnCode.CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION;
-            } else if (!clientIdVerfy(clientId)) {
+            } else if (!clientIdVerfy(clientId)) { // 验证客户端标识
                 returnCode = MqttConnectReturnCode.CONNECTION_REFUSED_IDENTIFIER_REJECTED;
-            } else if (onBlackList(RemotingHelper.getRemoteAddr(ctx.channel()), clientId)) {
+            } else if (onBlackList(RemotingHelper.getRemoteAddr(ctx.channel()), clientId)) { // 黑名单检查
                 returnCode = MqttConnectReturnCode.CONNECTION_REFUSED_NOT_AUTHORIZED;
-            } else if (!authentication(clientId, userName, password)) {
+            } else if (!authentication(clientId, userName, password)) { // 账号和密码验证
                 returnCode = MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD;
             } else {
+            // 2.客户端连接、会话缓存
+
                 int heartbeatSec = connectMessage.variableHeader().keepAliveTimeSeconds();
                 if (!keepAlive(clientId, ctx, heartbeatSec)) {
                     log.warn("[CONNECT] -> set heartbeat failure,clientId:{},heartbeatSec:{}", clientId, heartbeatSec);
@@ -90,7 +96,7 @@ public class ConnectProcessor implements RequestProcessor {
                 }
                 
                 // 如果清理会话，则新建会话，同时要清理存储
-                if (cleansession) {
+                if (cleanSession) {
                     clientSession = createNewClientSession(clientId, ctx);
                     sessionPresent = false;
                 // 如果不清理会话
@@ -122,12 +128,14 @@ public class ConnectProcessor implements RequestProcessor {
                 // 客户端会话缓存，保存到本地缓存
                 ConnectManager.getInstance().putClient(clientId, clientSession);
             }
-            
+
+            // 3.客户端连接响应
             // CONNACK – 确认连接请求
             MqttConnAckMessage ackMessage = MessageUtil.getConnectAckMessage(returnCode, sessionPresent);
             ctx.writeAndFlush(ackMessage);
             log.info("[CONNECT] -> {} connect to this mqtt server", clientId);
-            
+
+            // 4.离线消息重发. 客户端ID存入待重发消息队列
             reConnect2SendMessage(clientId);
         } catch (Exception ex) {
             log.warn("[CONNECT] -> Service Unavailable: cause={}", ex);
@@ -210,6 +218,12 @@ public class ConnectProcessor implements RequestProcessor {
         return clientSession;
     }
 
+    /**
+     * 离线消息重发.<br>
+     * 每次有客户端连接上线后，将客户端ID存入重发消息队列，待进一步确认是否有离线消息，如有则重发消息.
+     *
+     * @param clientId
+     */
     private void reConnect2SendMessage(String clientId) {
         this.reSendMessageService.put(clientId);
         this.reSendMessageService.wakeUp();

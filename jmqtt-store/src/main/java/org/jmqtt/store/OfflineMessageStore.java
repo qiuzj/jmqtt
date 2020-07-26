@@ -5,7 +5,8 @@ import org.jmqtt.common.bean.Message;
 import java.util.Collection;
 
 /**
- * cleansession message. 离线消息存储
+ * 离线消息存储.<br>
+ * cleansession message.
  */
 public interface OfflineMessageStore {
 
